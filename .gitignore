@@ -1,0 +1,16 @@
+# Ignore IDE and OS-specific files
+.idea/
+.vscode/
+.DS_Store
+
+# Ignore build files
+target/
+*.jar
+*.war
+
+# Ignore environment files
+.env
+
+# Ignore logs
+logs/
+*.log

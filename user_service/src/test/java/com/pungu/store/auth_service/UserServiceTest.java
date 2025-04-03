@@ -1,0 +1,74 @@
+package com.pungu.store.auth_service;
+
+import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
+import com.pungu.store.auth_service.entities.Users;
+import com.pungu.store.auth_service.repository.UserRepository;
+import com.pungu.store.auth_service.service.UserService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+class UserServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void registerUser_ShouldThrowException_WhenEmailAlreadyExists() {
+        // Arrange
+        UserRegistrationRequest request = new UserRegistrationRequest();
+        request.setEmail("test@example.com");
+        request.setPassword("securepassword");
+        request.setDateOfBirth(LocalDate.of(2000, 1, 1));
+
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(true);
+
+        // Act & Assert
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            userService.registerUser(request);
+        });
+
+        assertEquals("Email is already registered", exception.getMessage());
+        verify(userRepository, times(1)).existsByEmail(request.getEmail());
+    }
+
+    @Test
+    void registerUser_ShouldEncryptPasswordAndSaveUser() {
+        // Arrange
+        UserRegistrationRequest request = new UserRegistrationRequest();
+        request.setFirstName("John");
+        request.setLastName("Doe");
+        request.setEmail("john.doe@example.com");
+        request.setPassword("securepassword");
+        request.setDateOfBirth(LocalDate.of(2000, 1, 1));
+
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encryptedPassword");
+
+        // Act
+        userService.registerUser(request);
+
+        // Assert
+        verify(userRepository, times(1)).save(any(Users.class));
+    }
+}
