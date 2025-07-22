@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: api-gateway
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

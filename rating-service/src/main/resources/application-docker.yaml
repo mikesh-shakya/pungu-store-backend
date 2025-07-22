@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://rating-db:5432/ratingdb
+    username: ratinguser
+    password: ratingpass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  application:
+    name: rating-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

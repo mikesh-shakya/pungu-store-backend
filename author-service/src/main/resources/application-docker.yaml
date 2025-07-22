@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://author-db:5432/authordb
+    username: authoruser
+    password: authorpass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  application:
+    name: author-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

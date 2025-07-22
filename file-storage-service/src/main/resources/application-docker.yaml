@@ -1,0 +1,14 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+spring:
+  application:
+    name: file-storage-service
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+file:
+  upload-dir: /app/uploads  # Folder where files will be stored

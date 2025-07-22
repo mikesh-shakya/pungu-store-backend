@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://book-db:5432/bookdb
+    username: bookuser
+    password: bookpass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  application:
+    name: book-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    org:
+      springframework:
+        security:DEBUG
