@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: authuser
       POSTGRES_PASSWORD: authpass
     ports:
-      - "5432:5432"
+      - "5434:5432"
 
   book-db:
     image: postgres:15
@@ -53,6 +53,10 @@ services:
     build:
       context: ./api-gateway-service
     container_name: pungu-api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
     ports:
       - "8080:8080"
 
@@ -64,6 +68,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - auth-db
+      - service-registry
     ports:
       - "8081:8081"
 
@@ -75,11 +80,15 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - book-db
+      - rating-service
+      - author-service
+      - service-registry
     ports:
       - "8082:8082"
 
   file-storage-service:
     build: ./file-storage-service
+    container_name: file-storage-service
     ports:
       - "8083:8083"
     volumes:
@@ -97,6 +106,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - rating-db
+      - service-registry
     ports:
       - "8084:8084"
 
@@ -108,6 +118,7 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - author-db
+      - service-registry
     ports:
       - "8087:8087"
 

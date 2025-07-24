@@ -1,4 +1,4 @@
-package com.example.serviceRegistry.ServiceRegistry;
+package com.pungu.store.service_registry;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

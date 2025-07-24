@@ -1,24 +1,66 @@
 package com.pungu.store.auth_service.service;
 
 import com.pungu.store.auth_service.dtos.AuthRequest;
+import com.pungu.store.auth_service.dtos.AuthResponse;
 import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
-import com.pungu.store.auth_service.entities.Users;
+import com.pungu.store.auth_service.dtos.UserResponseDTO;
+import com.pungu.store.auth_service.entities.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service interface for managing user authentication and registration.
+ */
 @Service
 public interface UserService {
-    Optional<Users> getUserById(Long userId); // Fetch user by ID
 
-    Optional<Users> getUserByUsername(String username); // Fetch user by username
+    /**
+     * Fetch a user by their user ID.
+     *
+     * @param userId the ID of the user
+     * @return Optional containing the User, if found
+     */
+    Optional<UserResponseDTO> getUserById(Long userId);
 
-    Users registerUser(UserRegistrationRequest request); // Register a new user
+    /**
+     * Fetch a user by their username.
+     *
+     * @param username the username
+     * @return Optional containing the User, if found
+     */
+    Optional<UserResponseDTO> getUserByUsername(String username);
 
-    String loginUser(AuthRequest request); // Returns JWT token after logging in a user
+    /**
+     * Register a new user using the registration request.
+     *
+     * @param request the user registration data
+     * @return the registered User
+     */
+    UserResponseDTO registerUser(UserRegistrationRequest request);
 
-    List<UserRegistrationRequest> getAllUsers();
+    /**
+     * Log in a user using their credentials.
+     *
+     * @param request the authentication request containing username/email and password
+     * @return a JWT token if credentials are valid
+     */
+    AuthResponse loginUser(AuthRequest request);
 
-    Users updateRole(long userId, String role);
+    /**
+     * Get a list of all registered users.
+     *
+     * @return list of users (currently returns registration DTOs for simplicity)
+     */
+    List<UserResponseDTO> getAllUsers();
+
+    /**
+     * Update the role of a user.
+     *
+     * @param userId the ID of the user
+     * @param role the new role (e.g., ADMIN, USER, AUTHOR)
+     * @return the updated User
+     */
+    UserResponseDTO updateRole(long userId, String role);
 }

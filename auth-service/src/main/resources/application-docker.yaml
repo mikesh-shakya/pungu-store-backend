@@ -3,6 +3,9 @@ spring:
     url: jdbc:postgresql://auth-db:5432/authdb
     username: authuser
     password: authpass
+    driver-class-name: org.postgresql.Driver
+  application:
+    name: auth-service
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,13 +14,27 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+
+jwt:
+  token:
+    validity:
+      hours: 24
+  secret: your_super_secure_secret_key_here
+
 logging:
   level:
     org:
       springframework:
         security: DEBUG
 
+server:
+  port: 8081
+
 eureka:
   client:
     service-url:
       defaultZone: http://service-registry:8761/eureka/
+  instance:
+    prefer-ip-address: false
+    hostname: auth-service  # Use the service name from docker-compose
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}

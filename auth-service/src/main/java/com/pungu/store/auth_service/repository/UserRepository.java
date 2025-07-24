@@ -1,24 +1,54 @@
 package com.pungu.store.auth_service.repository;
 
-import com.pungu.store.auth_service.entities.Users;
+import com.pungu.store.auth_service.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-// Repository interface for managing User entity operations.
+/**
+ * Repository interface for managing User entity operations.
+ */
 @Repository
-public interface UserRepository extends JpaRepository<Users, Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<Users> findByUsername(String username); // Find a user by their username
+    /**
+     * Find a user by their username.
+     *
+     * @param username the username to search
+     * @return Optional containing the User, if found
+     */
+    Optional<User> findByUsername(String username);
 
-    Optional<Users> findByEmail(String email); // Find a user by their email
+    /**
+     * Find a user by their email.
+     *
+     * @param email the email to search
+     * @return Optional containing the User, if found
+     */
+    Optional<User> findByEmail(String email);
 
-    Optional<Users> findByUserId(Long userId); // Find a user by their UserId
+    /**
+     * Find a user by their userId.
+     *
+     * @param userId the user ID
+     * @return Optional containing the User, if found
+     */
+    Optional<User> findByUserId(Long userId);
 
-    boolean existsByEmail(String email); // Check if a user with the given email already exists
+    /**
+     * Check if a user exists with the given email.
+     *
+     * @param email the email to check
+     * @return true if user exists, false otherwise
+     */
+    boolean existsByEmail(String email);
 
-    boolean existsByUsername(String username); // Check if a user with the given username already exists
-
+    /**
+     * Check if a user exists with the given username.
+     *
+     * @param username the username to check
+     * @return true if user exists, false otherwise
+     */
+    boolean existsByUsername(String username);
 }
-
