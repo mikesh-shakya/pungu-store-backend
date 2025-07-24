@@ -2,64 +2,70 @@ package com.pungu.store.book_service.controllers;
 
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
-import com.pungu.store.book_service.entities.Book;
 import com.pungu.store.book_service.services.BookService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/books")
 public class BookController {
 
-    @Autowired
-    private BookService bookService;
+    private final BookService bookService;
 
-    @PostMapping("/addBooks")
+    /**
+     * Adds a new book using provided book details.
+     *
+     * @param bookRequest BookRequest DTO containing book details
+     * @return Created BookResponse
+     */
+    @PostMapping()
     public BookResponse createBook(@RequestBody BookRequest bookRequest) {
         return bookService.createBook(bookRequest);
     }
+
+    /**
+     * Fetches a book by its ID.
+     *
+     * @param bookId ID of the book
+     * @return BookResponse for the specified ID
+     */
     @GetMapping("/{bookId}")
-    public BookResponse getBookById(@PathVariable Long bookId) {
+    public BookResponse getBookById(@PathVariable("bookId") Long bookId) {
         return bookService.getBookById(bookId);
     }
-    @GetMapping("/getAll")
+
+    /**
+     * Retrieves all books.
+     *
+     * @return List of all BookResponse objects
+     */
+    @GetMapping("")
     public List<BookResponse> getAllBooks() {
         return bookService.getAllBooks();
     }
+
+    /**
+     * Updates an existing book with the given ID.
+     *
+     * @param bookId ID of the book to update
+     * @param bookRequest Updated book data
+     * @return Updated BookResponse
+     */
     @PutMapping("/{bookId}")
-    public BookResponse updateBook(@PathVariable Long bookId, @RequestBody BookRequest bookRequest) {
+    public BookResponse updateBook(@PathVariable("bookId") Long bookId, @RequestBody BookRequest bookRequest) {
         return bookService.updateBook(bookId, bookRequest);
     }
+
+    /**
+     * Deletes a book by ID.
+     *
+     * @param bookId ID of the book to delete
+     */
     @DeleteMapping("/{bookId}")
-    public void deleteBook(@PathVariable Long bookId) {
+    public void deleteBook(@PathVariable("bookId") Long bookId) {
         bookService.deleteBook(bookId);
     }
-    // 📌 Upload Book with File
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public ResponseEntity<String> uploadBook(
-            @RequestPart("file") MultipartFile file,
-            @RequestPart("book") Book book) {
-
-        String fileName = bookService.uploadBookFile(file, book);
-        return ResponseEntity.ok("Book uploaded successfully: " + fileName);
-    }
-
-    // 📌 Download Book File
-    @GetMapping("/download/{fileName}")
-    public ResponseEntity<byte[]> downloadBook(@PathVariable String fileName) {
-        byte[] fileData = bookService.downloadBookFile(fileName);
-        return ResponseEntity.ok(fileData);
-    }
-
-    // 📌 Delete Book File
-    @DeleteMapping("/delete/{fileName}")
-    public ResponseEntity<String> deleteBook(@PathVariable String fileName) {
-        bookService.deleteBookFile(fileName);
-        return ResponseEntity.ok("Book file deleted: " + fileName);
-    }
-
 }

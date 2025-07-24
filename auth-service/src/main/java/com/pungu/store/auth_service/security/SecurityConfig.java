@@ -1,6 +1,7 @@
 package com.pungu.store.auth_service.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.pungu.store.auth_service.service.CustomUserDetailsServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,18 +11,20 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
- * Security configuration class for JWT-based authentication.
+ * Security configuration for JWT-based stateless authentication.
  */
 @Configuration
 @EnableWebSecurity
-@EnableWebMvc
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     public static final String[] PUBLIC_URLS = {
@@ -29,71 +32,64 @@ public class SecurityConfig {
             "/v3/api-docs",
             "/v2/api-docs",
             "/swagger-resources/**",
-            "swagger-ui/**",
+            "/swagger-ui/**",
             "/webjars/**"
     };
 
-    @Autowired
-    private JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    @Autowired
-    private JWTAuthenticationFilter jwtAuthenticationFilter;
-    @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JWTAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsServiceImpl userDetailsService;
+    /**
+     * Bean definition for password encoding using BCrypt.
+     *
+     * @return PasswordEncoder with strength 12
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
 
-
-    // This Authentication provider is for database authentication...
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
         authenticationProvider.setUserDetailsService(userDetailsService);
-        authenticationProvider.setPasswordEncoder(passwordEncoder);
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
 
-    // Configures authentication manager bean.
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    // Configures security filter chain.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable())
-                .authorizeHttpRequests(auth -> auth.requestMatchers(PUBLIC_URLS).permitAll()
+                .cors(cors -> cors.disable()) // You may enable and configure this for cross-domain requests
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers(HttpMethod.GET).permitAll()
                         .anyRequest().authenticated())
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(this.jwtAuthenticationEntryPoint))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-
     }
 
+    // Uncomment and use if CORS is needed for APIs consumed from different origins
 //    @Bean
-//    public FilterRegistrationBean coresFilter() {
-//        UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        config.setAllowCredentials(true);
+//        config.addAllowedOriginPattern("http://localhost:5173"); // For development, allow all origins. Change to specific domain(s) in production.
+//        config.addAllowedHeader("*");
+//        config.addAllowedMethod("*");
+//        config.setMaxAge(3600L); // Cache pre-flight response for 1 hour
 //
-//        CorsConfiguration corsConfiguration = new CorsConfiguration();
-//        corsConfiguration.setAllowCredentials(true);
-//        corsConfiguration.addAllowedOriginPattern("*");
-//        corsConfiguration.addAllowedHeader("Authorization");
-//        corsConfiguration.addAllowedHeader("Content-Type");
-//        corsConfiguration.addAllowedHeader("Accept");
-//        corsConfiguration.addAllowedMethod("POST");
-//        corsConfiguration.addAllowedMethod("GET");
-//        corsConfiguration.addAllowedMethod("DELETE");
-//        corsConfiguration.addAllowedMethod("PUT");
-//        corsConfiguration.addAllowedMethod("OPTIONS");
-//        corsConfiguration.setMaxAge(3600L);
-//        urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
-//        FilterRegistrationBean bean = new FilterRegistrationBean<>(new CorsFilter(urlBasedCorsConfigurationSource));
-//        bean.setOrder(-110);
-//        return bean;
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return source;
 //    }
 }

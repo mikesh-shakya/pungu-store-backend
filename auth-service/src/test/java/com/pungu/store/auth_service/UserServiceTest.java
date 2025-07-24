@@ -1,7 +1,7 @@
 package com.pungu.store.auth_service;
 
 import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
-import com.pungu.store.auth_service.entities.Users;
+import com.pungu.store.auth_service.entities.User;
 import com.pungu.store.auth_service.repository.UserRepository;
 import com.pungu.store.auth_service.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,11 +11,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import java.time.LocalDate;
-import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
@@ -69,6 +69,6 @@ class UserServiceTest {
         userService.registerUser(request);
 
         // Assert
-        verify(userRepository, times(1)).save(any(Users.class));
+        verify(userRepository, times(1)).save(any(User.class));
     }
 }

@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://rating-db:5432/ratingdb
+    username: ratinguser
+    password: ratingpass
+    driver-class-name: org.postgresql.Driver
+  application:
+    name: rating-service
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    prefer-ip-address: false
+    hostname: rating-service  # Use the service name from docker-compose
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+server:
+  port: 8084
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

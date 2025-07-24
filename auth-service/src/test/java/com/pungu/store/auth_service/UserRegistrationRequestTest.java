@@ -1,8 +1,11 @@
 package com.pungu.store.auth_service;
 
 import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.Test;
-import jakarta.validation.*;
 
 import java.time.LocalDate;
 import java.util.Set;

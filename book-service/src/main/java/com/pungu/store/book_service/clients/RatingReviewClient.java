@@ -7,10 +7,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
-@FeignClient(name = "rating-service", url = "http://localhost:8084/api/ratings-reviews")
+/**
+ * Feign client to communicate with the Rating & Review Service.
+ * Used to fetch all ratings and reviews for a specific book.
+ */
+@FeignClient(name = "rating-service") // Uses Eureka for service discovery
 public interface RatingReviewClient {
 
-    @GetMapping("/{bookId}")
-    List<RatingResponse> getRatingsForBook(@PathVariable Long bookId);
+    /**
+     * Fetches all ratings and reviews associated with a given book ID.
+     *
+     * @param bookId ID of the book
+     * @return List of RatingResponse DTOs containing rating and review details
+     */
+    @GetMapping("/api/ratings/book/{bookId}")
+    List<RatingResponse> getRatingsForBook(@PathVariable("bookId") Long bookId);
 
 }

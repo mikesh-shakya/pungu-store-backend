@@ -1,0 +1,51 @@
+jwt:
+  secret: your256bitsecretkeyusedforhmacsigning
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: api-gateway  # Use the service name from docker-compose
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**, Path=/api/users/**
+        - id: book-service
+          uri: lb://BOOK-SERVICE
+          predicates:
+            - Path=/api/books/**
+        - id: file-storage-service
+          uri: lb://FILE-STORAGE-SERVICE
+          predicates:
+            - Path=/api/files/**
+        - id: rating-service
+          uri: lb://RATING-SERVICE
+          predicates:
+            - Path=/api/ratings/**
+        - id: author-service
+          uri: lb://AUTHOR-SERVICE
+          predicates:
+            - Path=/api/authors/**
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

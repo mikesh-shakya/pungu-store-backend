@@ -1,0 +1,28 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    prefer-ip-address: false
+    hostname: file-storage-service  # Use the service name from docker-compose
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+
+spring:
+  application:
+    name: file-storage-service
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+server:
+  port: 8083
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+
+file:
+  upload-dir: /app/uploads  # Folder where files will be stored

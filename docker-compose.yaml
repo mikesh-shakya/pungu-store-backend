@@ -1,0 +1,133 @@
+version: '3.8'
+services:
+
+  # =========================
+  # == DATABASES PER SERVICE
+  # =========================
+
+  auth-db:
+    image: postgres:15
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: authuser
+      POSTGRES_PASSWORD: authpass
+    ports:
+      - "5434:5432"
+
+  book-db:
+    image: postgres:15
+    container_name: book-db
+    environment:
+      POSTGRES_DB: bookdb
+      POSTGRES_USER: bookuser
+      POSTGRES_PASSWORD: bookpass
+    ports:
+      - "5433:5432"
+
+  rating-db:
+    image: postgres:15
+    container_name: rating-db
+    environment:
+      POSTGRES_DB: ratingdb
+      POSTGRES_USER: ratinguser
+      POSTGRES_PASSWORD: ratingpass
+    ports:
+      - "5435:5432"
+
+  author-db:
+    image: postgres:15
+    container_name: author-db
+    environment:
+      POSTGRES_DB: authordb
+      POSTGRES_USER: authoruser
+      POSTGRES_PASSWORD: authorpass
+    ports:
+      - "5436:5432"
+
+  # =========================
+  # == MICROSERVICES
+  # =========================
+
+  api-gateway:
+    build:
+      context: ./api-gateway-service
+    container_name: pungu-api-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - service-registry
+    ports:
+      - "8080:8080"
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: pungu-auth-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - auth-db
+      - service-registry
+    ports:
+      - "8081:8081"
+
+  book-service:
+    build:
+      context: ./book-service
+    container_name: pungu-book-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - book-db
+      - rating-service
+      - author-service
+      - service-registry
+    ports:
+      - "8082:8082"
+
+  file-storage-service:
+    build: ./file-storage-service
+    container_name: file-storage-service
+    ports:
+      - "8083:8083"
+    volumes:
+      - file_uploads:/app/uploads
+    depends_on:
+      - service-registry
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  rating-service:
+    build:
+      context: ./rating-service
+    container_name: pungu-rating-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - rating-db
+      - service-registry
+    ports:
+      - "8084:8084"
+
+  author-service:
+    build:
+      context: ./author-service
+    container_name: pungu-author-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - author-db
+      - service-registry
+    ports:
+      - "8087:8087"
+
+  service-registry:
+    build:
+      context: ./service-registry
+    container_name: pungu-service-registry
+    ports:
+      - "8761:8761"
+
+volumes:
+  file_uploads:
