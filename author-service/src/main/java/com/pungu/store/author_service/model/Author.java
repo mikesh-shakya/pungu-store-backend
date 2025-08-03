@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "authors")
@@ -17,29 +18,26 @@ public class Author {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long authorId;
-
     @Column(nullable = false, unique = true, length = 100)
-    private String name;
-
+    private String fullName;
+    @Column(nullable = false, unique = true, length = 100)
+    private String penName;
     @Column(columnDefinition = "TEXT")
     private String bio;
-
+    private String profilePictureUrl;
     private String nationality;
     private LocalDate dateOfBirth;
-
+    private LocalDate dateOfDeath;
     @Column(updatable = false)
-    private LocalDate createdAt;
-
-    private LocalDate lastUpdatedAt;
-
+    private LocalDateTime createdAt;
+    private LocalDateTime lastUpdatedAt;
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDate.now();
-        this.lastUpdatedAt = LocalDate.now();
+        this.createdAt = LocalDateTime.now();
+        this.lastUpdatedAt = LocalDateTime.now();
     }
-
     @PreUpdate
     protected void onUpdate() {
-        this.lastUpdatedAt = LocalDate.now();
+        this.lastUpdatedAt = LocalDateTime.now();
     }
 }

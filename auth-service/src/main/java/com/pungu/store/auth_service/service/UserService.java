@@ -2,18 +2,15 @@ package com.pungu.store.auth_service.service;
 
 import com.pungu.store.auth_service.dtos.AuthRequest;
 import com.pungu.store.auth_service.dtos.AuthResponse;
-import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
+import com.pungu.store.auth_service.dtos.UserRequestDTO;
 import com.pungu.store.auth_service.dtos.UserResponseDTO;
-import com.pungu.store.auth_service.entities.User;
-import org.springframework.stereotype.Service;
+import jakarta.validation.Valid;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
  * Service interface for managing user authentication and registration.
  */
-@Service
 public interface UserService {
 
     /**
@@ -25,20 +22,12 @@ public interface UserService {
     Optional<UserResponseDTO> getUserById(Long userId);
 
     /**
-     * Fetch a user by their username.
-     *
-     * @param username the username
-     * @return Optional containing the User, if found
-     */
-    Optional<UserResponseDTO> getUserByUsername(String username);
-
-    /**
      * Register a new user using the registration request.
      *
      * @param request the user registration data
      * @return the registered User
      */
-    UserResponseDTO registerUser(UserRegistrationRequest request);
+    UserResponseDTO registerUser(UserRequestDTO request);
 
     /**
      * Log in a user using their credentials.
@@ -49,13 +38,6 @@ public interface UserService {
     AuthResponse loginUser(AuthRequest request);
 
     /**
-     * Get a list of all registered users.
-     *
-     * @return list of users (currently returns registration DTOs for simplicity)
-     */
-    List<UserResponseDTO> getAllUsers();
-
-    /**
      * Update the role of a user.
      *
      * @param userId the ID of the user
@@ -63,4 +45,13 @@ public interface UserService {
      * @return the updated User
      */
     UserResponseDTO updateRole(long userId, String role);
+
+    /**
+     * (Optional) Delete or deactivate a user.
+     *
+     * @param userId the ID of the user
+     */
+    void deleteUser(Long userId);
+
+    UserResponseDTO updateUser(Long userId, @Valid UserRequestDTO request);
 }

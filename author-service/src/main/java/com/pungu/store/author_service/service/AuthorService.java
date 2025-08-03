@@ -7,9 +7,12 @@ import com.pungu.store.author_service.exception.DuplicateAuthorException;
 import com.pungu.store.author_service.model.Author;
 import com.pungu.store.author_service.repository.AuthorRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -28,17 +31,22 @@ public class AuthorService {
      * @return AuthorResponse object representing the created author.
      * @throws DuplicateAuthorException if an author with the same name already exists.
      */
+    @Transactional
     public AuthorResponse createAuthor(AuthorRequest request) {
-        if (authorRepository.existsByName(request.getName())) {
+        if (authorRepository.existsByFullNameIgnoreCase(request.getFullName())) {
             throw new DuplicateAuthorException("Author with this name already exists.");
         }
 
         Author author = Author.builder()
-                .name(request.getName())
+                .fullName(request.getFullName())
+                .penName(request.getPenName())
+                .profilePictureUrl(request.getProfilePictureUrl())
                 .bio(request.getBio())
                 .nationality(request.getNationality())
                 .dateOfBirth(request.getDateOfBirth())
+                .dateOfDeath(request.getDateOfDeath())
                 .build();
+
         author = authorRepository.save(author);
         return mapToResponse(author);
     }
@@ -61,8 +69,20 @@ public class AuthorService {
      *
      * @return List of AuthorResponse objects representing all authors.
      */
-    public List<AuthorResponse> getAllAuthors() {
-        return authorRepository.findAll().stream()
+    public List<AuthorResponse> getAllAuthors(Sort sort) {
+        return authorRepository.findAll(sort).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Retrieves all authors sorted by full name.
+     *
+     * @return Sorted list of AuthorResponse.
+     */
+    public List<AuthorResponse> getAuthorsSortedByName() {
+        return authorRepository.findAll(Sort.by(Sort.Direction.ASC, "fullName"))
+                .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -75,30 +95,23 @@ public class AuthorService {
      * @return Updated AuthorResponse object.
      * @throws AuthorNotFoundException if the author is not found.
      */
+    @Transactional
     public AuthorResponse updateAuthor(Long authorId, AuthorRequest request) {
         Author author = authorRepository.findById(authorId)
                 .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
 
-        // Check for existing name
-        if (authorRepository.existsByName(request.getName())) {
+        Optional<Author> existing = authorRepository.findByFullNameIgnoreCase(request.getFullName());
+        if (existing.isPresent() && !existing.get().getAuthorId().equals(authorId)) {
             throw new DuplicateAuthorException("Author with this name already exists.");
         }
 
-        if (request.getName() != null) {
-            author.setName(request.getName());
-        }
-
-        if (request.getBio() != null) {
-            author.setBio(request.getBio());
-        }
-
-        if (request.getNationality() != null) {
-            author.setNationality(request.getNationality());
-        }
-
-        if (request.getDateOfBirth() != null) {
-            author.setDateOfBirth(request.getDateOfBirth());
-        }
+        if (request.getFullName() != null) author.setFullName(request.getFullName());
+        if (request.getPenName() != null) author.setPenName(request.getPenName());
+        if (request.getProfilePictureUrl() != null) author.setProfilePictureUrl(request.getProfilePictureUrl());
+        if (request.getBio() != null) author.setBio(request.getBio());
+        if (request.getNationality() != null) author.setNationality(request.getNationality());
+        if (request.getDateOfBirth() != null) author.setDateOfBirth(request.getDateOfBirth());
+        if (request.getDateOfDeath() != null) author.setDateOfDeath(request.getDateOfDeath());
 
         author = authorRepository.save(author);
         return mapToResponse(author);
@@ -110,6 +123,7 @@ public class AuthorService {
      * @param authorId ID of the author to delete.
      * @throws AuthorNotFoundException if the author is not found.
      */
+    @Transactional
     public void deleteAuthor(Long authorId) {
         if (!authorRepository.existsById(authorId)) {
             throw new AuthorNotFoundException("Author not found");
@@ -126,10 +140,13 @@ public class AuthorService {
     private AuthorResponse mapToResponse(Author author) {
         return AuthorResponse.builder()
                 .authorId(author.getAuthorId())
-                .name(author.getName())
+                .fullName(author.getFullName())
+                .penName(author.getPenName())
+                .profilePictureUrl(author.getProfilePictureUrl())
                 .bio(author.getBio())
                 .nationality(author.getNationality())
                 .dateOfBirth(author.getDateOfBirth())
+                .dateOfDeath(author.getDateOfDeath())
                 .build();
     }
 
@@ -143,7 +160,7 @@ public class AuthorService {
     public String getAuthorNameById(Long id) {
         Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
-        return author.getName();
+        return author.getFullName();
     }
 
     /**
@@ -154,7 +171,7 @@ public class AuthorService {
      * @throws AuthorNotFoundException if no author is found with the given name
      */
     public Long getAuthorIdByName(String authorName) {
-        Author author = authorRepository.findByNameIgnoreCase(authorName)
+        Author author = authorRepository.findByFullNameIgnoreCase(authorName)
                 .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
         return author.getAuthorId();
     }

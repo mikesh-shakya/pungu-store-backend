@@ -1,6 +1,7 @@
 package com.pungu.store.book_service.dtos;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -22,24 +23,21 @@ import java.util.List;
  * - availableForDownload: Boolean indicating if the book is available for download
  */
 @Data
+@Builder
 @AllArgsConstructor
 public class BookResponse {
 
+    private long bookId;
     private String title;
-
+    private long authorId;
     private String authorName;
-
     private String description;
-
+    private String genre;
+    private String language;
+    private LocalDate publicationDate;
     private String coverImageUrl;
-
-    private LocalDate publicationYear;
-
     private Double averageRating;
-
     private List<RatingResponse> reviews;
-
     private boolean availableForReading;
-
     private boolean availableForDownload;
 }

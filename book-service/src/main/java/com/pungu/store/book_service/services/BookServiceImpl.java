@@ -8,7 +8,9 @@ import com.pungu.store.book_service.dtos.RatingResponse;
 import com.pungu.store.book_service.entities.Book;
 import com.pungu.store.book_service.repositories.BookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,18 +32,24 @@ public class BookServiceImpl implements BookService {
      * @return BookResponse DTO with the created book's details.
      */
     @Override
+    @Transactional
     public BookResponse createBook(BookRequest bookRequest) {
-        Book book = new Book();
-        book.setTitle(bookRequest.getTitle());
-        book.setAuthorId(bookRequest.getAuthorId());
-        book.setDescription(bookRequest.getDescription());
-        book.setCoverImageUrl(bookRequest.getCoverImageUrl());
-        book.setPublicationDate(bookRequest.getPublicationYear());
-        book.setAvailableForReading(bookRequest.getFileUrl() != null);
-        book.setAvailableForDownload(bookRequest.getFileUrl() != null);
+        Long authorId = bookRequest.getAuthorName() != null ? authorClient.getAuthorIdByName(bookRequest.getAuthorName()) : bookRequest.getAuthorId();
 
-        book = bookRepository.save(book);
-        return mapToResponse(book);
+        Book book = Book.builder()
+                .title(bookRequest.getTitle())
+                .authorId(authorId)
+                .description(bookRequest.getDescription())
+                .genre(bookRequest.getGenre())
+                .language(bookRequest.getLanguage())
+                .publicationDate(bookRequest.getPublicationDate())
+                .ebookUrl(bookRequest.getEbookUrl())
+                .coverImageUrl(bookRequest.getCoverImageUrl())
+                .availableForReading(bookRequest.getEbookUrl() != null)
+                .availableForDownload(bookRequest.getEbookUrl() != null)
+                .build();
+
+        return mapToResponse(bookRepository.save(book));
     }
 
     /**
@@ -57,14 +65,19 @@ public class BookServiceImpl implements BookService {
         return mapToResponse(book);
     }
 
+    @Override
+    public List<BookResponse> getAllBookByAuthorId(Long authorId, Sort sort) {
+        return bookRepository.findByAuthorId(authorId, sort).stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
     /**
      * Returns all books in the database.
      *
      * @return List of BookResponse DTOs.
      */
     @Override
-    public List<BookResponse> getAllBooks() {
-        return bookRepository.findAll()
+    public List<BookResponse> getAllBooks(Sort sort) {
+        return bookRepository.findAll(sort)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -78,18 +91,28 @@ public class BookServiceImpl implements BookService {
      * @return Updated BookResponse.
      */
     @Override
+    @Transactional
     public BookResponse updateBook(Long bookId, BookRequest bookRequest) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+        if (!bookRepository.existsById(bookId)) {
+            throw new RuntimeException("Book not found");
+        }
 
-        book.setTitle(bookRequest.getTitle());
-        book.setDescription(bookRequest.getDescription());
-        book.setCoverImageUrl(bookRequest.getCoverImageUrl());
-        book.setPublicationDate(bookRequest.getPublicationYear());
-        book.setAuthorId(bookRequest.getAuthorId());
+        Long authorId = bookRequest.getAuthorName() != null ? authorClient.getAuthorIdByName(bookRequest.getAuthorName()) : bookRequest.getAuthorId();
 
-        book = bookRepository.save(book);
-        return mapToResponse(book);
+        Book updatedBook = Book.builder()
+                .title(bookRequest.getTitle())
+                .authorId(authorId)
+                .description(bookRequest.getDescription())
+                .genre(bookRequest.getGenre())
+                .language(bookRequest.getLanguage())
+                .publicationDate(bookRequest.getPublicationDate())
+                .ebookUrl(bookRequest.getEbookUrl())
+                .coverImageUrl(bookRequest.getCoverImageUrl())
+                .availableForReading(bookRequest.getEbookUrl() != null)
+                .availableForDownload(bookRequest.getEbookUrl() != null)
+                .build();
+
+        return mapToResponse(bookRepository.save(updatedBook));
     }
 
     /**
@@ -118,18 +141,26 @@ public class BookServiceImpl implements BookService {
                 .average()
                 .orElse(0.0);
 
-        String authorName = authorClient.getAuthorNameById(book.getAuthorId());
+        String authorName = book.getAuthorId() != null
+                ? authorClient.getAuthorNameById(book.getAuthorId())
+                : "Unknown Author";
+        long authorId = book.getAuthorId() != null ? book.getAuthorId() : -1;
 
-        return new BookResponse(
-                book.getTitle(),
-                authorName,
-                book.getDescription(),
-                book.getCoverImageUrl(),
-                book.getPublicationDate(),
-                averageRating,
-                ratings,
-                book.isAvailableForReading(),
-                book.isAvailableForDownload()
-        );
+        return BookResponse.builder()
+                .bookId(book.getBookId())
+                .title(book.getTitle())
+                .authorName(authorName)
+                .authorId(authorId)
+                .description(book.getDescription())
+                .genre(book.getGenre())
+                .coverImageUrl(book.getCoverImageUrl())
+                .publicationDate(book.getPublicationDate())
+                .averageRating(averageRating)
+                .reviews(ratings)
+                .availableForReading(book.isAvailableForReading())
+                .availableForDownload(book.isAvailableForDownload())
+                .language(book.getLanguage())
+                .build();
     }
+
 }

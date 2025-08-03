@@ -2,14 +2,14 @@ package com.pungu.store.auth_service.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,7 +27,6 @@ public class JWTTokenHelper {
     // Token validity duration
     @Value("${jwt.token.validity.hours}")
     private int validityInHours;
-
     // Injected secret key from application.properties
     @Value("${jwt.secret}")
     private String secret;
@@ -49,11 +48,11 @@ public class JWTTokenHelper {
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + getJwtTokenValidity().toMillis()))
-                .signWith(SignatureAlgorithm.HS256, getSigningKey())
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + getJwtTokenValidity().toMillis()))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -141,10 +140,16 @@ public class JWTTokenHelper {
      * @return Claims object
      */
     private Claims getAllClaimsFromToken(String token) {
+//        return Jwts.parser()
+//                .setSigningKey(getSigningKey())
+//                .parseClaimsJws(token)
+//                .getBody();
+
         return Jwts.parser()
-                .setSigningKey(getSigningKey())
-                .parseClaimsJws(token)
-                .getBody();
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     /**
@@ -152,8 +157,8 @@ public class JWTTokenHelper {
      *
      * @return Signing key
      */
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64URL.decode(secret));
     }
 
     /**

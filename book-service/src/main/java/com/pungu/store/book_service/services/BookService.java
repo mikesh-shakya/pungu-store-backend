@@ -2,6 +2,7 @@ package com.pungu.store.book_service.services;
 
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,11 +31,19 @@ public interface BookService {
     BookResponse getBookById(Long bookId);
 
     /**
+     * Retrieves all book by an author ID.
+     *
+     * @param authorId The ID of the author.
+     * @return BookResponse containing book details.
+     */
+    List<BookResponse> getAllBookByAuthorId(Long authorId, Sort sort);
+
+    /**
      * Retrieves all books.
      *
      * @return A list of BookResponse objects.
      */
-    List<BookResponse> getAllBooks();
+    List<BookResponse> getAllBooks(Sort sort);
 
     /**
      * Updates an existing book's details.

@@ -1,11 +1,11 @@
 package com.pungu.store.auth_service.service;
 
-import com.pungu.store.auth_service.dtos.AuthRequest;
-import com.pungu.store.auth_service.dtos.AuthResponse;
-import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
-import com.pungu.store.auth_service.dtos.UserResponseDTO;
+import com.pungu.store.auth_service.dtos.*;
 import com.pungu.store.auth_service.entities.Role;
 import com.pungu.store.auth_service.entities.User;
+import com.pungu.store.auth_service.exceptions.DuplicateUserException;
+import com.pungu.store.auth_service.exceptions.InvalidLoginRequest;
+import com.pungu.store.auth_service.exceptions.UserNotFoundException;
 import com.pungu.store.auth_service.repository.UserRepository;
 import com.pungu.store.auth_service.security.JWTTokenHelper;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +15,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.apache.http.impl.auth.BasicScheme.authenticate;
 
 /**
  * Implementation of UserService interface handling authentication and registration.
@@ -36,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private final JWTTokenHelper jwtTokenHelper;
     private final CustomUserDetailsServiceImpl userDetailsService;
     private final AuthenticationManager authenticationManager;
+    private final UserMapper userMapper;
 
     /**
      * Fetch user by ID and convert to DTO.
@@ -43,43 +39,30 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<UserResponseDTO> getUserById(Long userId) {
         return userRepository.findByUserId(userId)
-                .map(this::convertUserToUserResponseDTO);
-    }
-
-    /**
-     * Fetch user by username and convert to DTO.
-     */
-    @Override
-    public Optional<UserResponseDTO> getUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .map(this::convertUserToUserResponseDTO);
+                .map(userMapper::convertUserToUserResponseDTO);
     }
 
     /**
      * Register a new user.
      */
     @Override
-    public UserResponseDTO registerUser(UserRegistrationRequest request) {
+    public UserResponseDTO registerUser(UserRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already in use.");
-        }
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already taken.");
+            throw new DuplicateUserException("User with this email already exists.");
         }
 
-        User user = new User();
-        user.setUsername(request.getUsername());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setMiddleName(request.getMiddleName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.USER); // use enum
-        user.setDateOfBirth(request.getDateOfBirth());
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .profilePictureUrl(request.getProfilePictureUrl())
+                .nationality(request.getNationality())
+                .dateOfBirth(request.getDateOfBirth())
+                .role(Role.USER)
+                .build();
 
-        userRepository.save(user);
-
-        return convertUserToUserResponseDTO(user);
+        return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
     }
 
     /**
@@ -88,21 +71,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public AuthResponse loginUser(AuthRequest request) {
         authenticate(request.getEmail(), request.getPassword());
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        String jwt_token = jwtTokenHelper.generateToken(userDetails);
-        AuthResponse response = AuthResponse.builder().token(jwt_token).username(userDetails.getUsername()).build();
-        return response;
-    }
 
-    /**
-     * Fetch all users as UserRegistrationRequest (consider changing this to a proper UserDto).
-     */
-    @Override
-    public List<UserResponseDTO> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::convertUserToUserResponseDTO)
-                .collect(Collectors.toList());
+        // Load user from DB
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UserNotFoundException("No user found with this email."));
+
+        // Generate JWT token
+        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+        String jwtToken = jwtTokenHelper.generateToken(userDetails);
+
+        return AuthResponse.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .token(jwtToken)
+                .build();
     }
 
     /**
@@ -110,35 +93,39 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserResponseDTO updateRole(long userId, String role) {
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Role roleEnum = Role.fromString(role);
 
-        user.setRole(Role.valueOf(role.toUpperCase())); // throws IllegalArgumentException if invalid
-        userRepository.save(user);
-        return convertUserToUserResponseDTO(user);
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("No such user found."));
+
+        user.setRole(roleEnum);
+        return userMapper.convertUserToUserResponseDTO( userRepository.save(user));
     }
 
-    /**
-     * Converts a User entity to a registration-style DTO (temporary).
-     */
-    private UserResponseDTO convertUserToUserResponseDTO(User user) {
-        UserResponseDTO dto = new UserResponseDTO();
-        dto.setId(user.getUserId());
-        dto.setFirstName(user.getFirstName());
-        dto.setMiddleName(user.getMiddleName());
-        dto.setLastName(user.getLastName());
-        dto.setUsername(user.getUsername());
-        dto.setEmail(user.getEmail());
-        dto.setDateOfBirth(user.getDateOfBirth());
-
-        // Compute age
-        if (user.getDateOfBirth() != null) {
-            dto.setAge(Period.between(user.getDateOfBirth(), LocalDate.now()).getYears());
-        } else {
-            dto.setAge(0);
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("No such user found.");
         }
+        userRepository.deleteById(userId);
+    }
 
-        return dto;
+    @Override
+    public UserResponseDTO updateUser(Long userId, UserRequestDTO request) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("No such user found.");
+        }
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .profilePictureUrl(request.getProfilePictureUrl())
+                .nationality(request.getNationality())
+                .dateOfBirth(request.getDateOfBirth())
+                .build();
+
+        return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
     }
 
     /**
@@ -149,7 +136,7 @@ public class UserServiceImpl implements UserService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password));
         } catch (BadCredentialsException e) {
-            throw new RuntimeException("Invalid username or password");
+            throw new InvalidLoginRequest("Invalid email or password");
         }
     }
 }

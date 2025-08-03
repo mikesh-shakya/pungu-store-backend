@@ -15,9 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
  * Security configuration for JWT-based stateless authentication.
@@ -77,19 +74,4 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    // Uncomment and use if CORS is needed for APIs consumed from different origins
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration config = new CorsConfiguration();
-//        config.setAllowCredentials(true);
-//        config.addAllowedOriginPattern("http://localhost:5173"); // For development, allow all origins. Change to specific domain(s) in production.
-//        config.addAllowedHeader("*");
-//        config.addAllowedMethod("*");
-//        config.setMaxAge(3600L); // Cache pre-flight response for 1 hour
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", config);
-//        return source;
-//    }
 }

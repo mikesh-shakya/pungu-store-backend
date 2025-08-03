@@ -1,5 +1,6 @@
 package com.pungu.store.auth_service.dtos;
 
+import com.pungu.store.auth_service.entities.Role;
 import lombok.*;
 
 @Setter
@@ -8,6 +9,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class AuthResponse {
-    private String username;
+
+    private Long userId;
+    private String email;
+    private Role role;
     private String token;
 }

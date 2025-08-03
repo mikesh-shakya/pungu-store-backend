@@ -1,6 +1,6 @@
 package com.pungu.store.auth_service;
 
-import com.pungu.store.auth_service.dtos.UserRegistrationRequest;
+import com.pungu.store.auth_service.dtos.UserRequestDTO;
 import com.pungu.store.auth_service.entities.User;
 import com.pungu.store.auth_service.repository.UserRepository;
 import com.pungu.store.auth_service.service.UserService;
@@ -36,7 +36,7 @@ class UserServiceTest {
     @Test
     void registerUser_ShouldThrowException_WhenEmailAlreadyExists() {
         // Arrange
-        UserRegistrationRequest request = new UserRegistrationRequest();
+        UserRequestDTO request = new UserRequestDTO();
         request.setEmail("test@example.com");
         request.setPassword("securepassword");
         request.setDateOfBirth(LocalDate.of(2000, 1, 1));
@@ -55,7 +55,7 @@ class UserServiceTest {
     @Test
     void registerUser_ShouldEncryptPasswordAndSaveUser() {
         // Arrange
-        UserRegistrationRequest request = new UserRegistrationRequest();
+        UserRequestDTO request = new UserRequestDTO();
         request.setFirstName("John");
         request.setLastName("Doe");
         request.setEmail("john.doe@example.com");

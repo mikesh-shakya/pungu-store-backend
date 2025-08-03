@@ -5,9 +5,12 @@ import com.pungu.store.author_service.dto.AuthorResponse;
 import com.pungu.store.author_service.service.AuthorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -48,8 +51,17 @@ public class AuthorController {
      * @return a list of all author responses
      */
     @GetMapping()
-    public ResponseEntity<List<AuthorResponse>> getAllAuthors() {
-        return ResponseEntity.ok(authorService.getAllAuthors());
+    public ResponseEntity<List<AuthorResponse>> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
+        Sort sort = Sort.unsorted();
+        if (sortBy != null && !sortBy.isBlank()) {
+            List<Sort.Order> orders = Arrays.stream(sortBy.split(","))
+                    .map(String::trim)
+                    .map(field -> new Sort.Order(Sort.Direction.ASC, field))
+                    .toList();
+
+            sort = Sort.by(orders);
+        }
+        return ResponseEntity.ok(authorService.getAllAuthors(sort));
     }
 
     /**
@@ -60,7 +72,10 @@ public class AuthorController {
      * @return the updated author response
      */
     @PutMapping("/{authorId}")
-    public ResponseEntity<AuthorResponse> updateAuthor(@PathVariable("authorId") Long authorId, @Valid @RequestBody AuthorRequest request) {
+    public ResponseEntity<AuthorResponse> updateAuthor(
+            @PathVariable("authorId") Long authorId,
+            @Valid @RequestBody AuthorRequest request
+    ) {
         return ResponseEntity.ok(authorService.updateAuthor(authorId, request));
     }
 
@@ -71,6 +86,7 @@ public class AuthorController {
      * @return a success message
      */
     @DeleteMapping("/{authorId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<String> deleteAuthor(@PathVariable("authorId") Long authorId) {
         authorService.deleteAuthor(authorId);
         return ResponseEntity.ok("Author deleted successfully");
@@ -90,7 +106,7 @@ public class AuthorController {
     /**
      * Retrieves the name of an author based on their ID.
      *
-     * @param id the ID of the author
+     * @param authorId the ID of the author
      * @return the name of the author
      */
     @GetMapping("/{authorId}/name")
