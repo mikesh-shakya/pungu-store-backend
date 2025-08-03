@@ -15,23 +15,15 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
-public class UserRegistrationRequest {
-
+public class UserRequestDTO {
     @NotBlank(message = "First name is required")
     private String firstName;
-
-    private String middleName;
-
     @NotBlank(message = "Last name is required")
     private String lastName;
-
-    @NotBlank(message = "Username is required.")
-    private String username;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
-
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
@@ -39,4 +31,7 @@ public class UserRegistrationRequest {
     @Past(message = "Date of birth must be in the past")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
+
+    private String profilePictureUrl;
+    private String nationality;
 }

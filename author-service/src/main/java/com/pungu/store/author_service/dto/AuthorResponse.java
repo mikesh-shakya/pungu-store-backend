@@ -12,9 +12,13 @@ import java.time.LocalDate;
 @Builder
 public class AuthorResponse {
     private Long authorId;
-    private String name;
+    private String fullName;
+    private String penName;
+    private String profilePictureUrl;
     private String bio;
     private String nationality;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dateOfDeath;
 }

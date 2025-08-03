@@ -11,7 +11,7 @@ import java.util.List;
  * Feign client to communicate with the Rating & Review Service.
  * Used to fetch all ratings and reviews for a specific book.
  */
-@FeignClient(name = "rating-service") // Uses Eureka for service discovery
+@FeignClient(name = "rating-service", fallback = RatingReviewClientFallback.class) // Uses Eureka for service discovery
 public interface RatingReviewClient {
 
     /**

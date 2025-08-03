@@ -19,7 +19,7 @@ jwt:
   token:
     validity:
       hours: 24
-  secret: your_super_secure_secret_key_here
+  secret: eW91cl9zdXBlcl9zZWN1cmVfc2VjcmV0X2tleV9oZXJl
 
 logging:
   level:

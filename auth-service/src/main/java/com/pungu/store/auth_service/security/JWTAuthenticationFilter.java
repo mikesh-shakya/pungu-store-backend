@@ -8,8 +8,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,7 +26,7 @@ import java.io.IOException;
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     private final JWTTokenHelper jwtTokenHelper;
-    private final ApplicationContext context;
+    private final CustomUserDetailsServiceImpl userDetailsService;
 
     /**
      * Validates the JWT from the request header and sets the authentication
@@ -68,8 +66,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
         // Validate token and set authentication
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = context.getBean(CustomUserDetailsServiceImpl.class)
-                    .loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             boolean isTokenValid = jwtTokenHelper.validateToken(token, userDetails);
 
@@ -86,7 +83,6 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 }

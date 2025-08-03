@@ -1,9 +1,8 @@
 package com.pungu.store.auth_service.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import com.pungu.store.auth_service.entities.Role;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -13,33 +12,25 @@ import java.time.LocalDate;
  */
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserResponseDTO {
 
-    @JsonProperty("id")
     private Long id;
 
-    @JsonProperty("first_name")
     private String firstName;
-
-    @JsonProperty("middle_name")
-    private String middleName;
-
-    @JsonProperty("last_name")
     private String lastName;
 
-    @JsonProperty("username")
-    private String username;
-
-    @JsonProperty("email")
     private String email;
+    private Role role;
 
-    @JsonProperty("date_of_birth")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 
-    /**
-     * Age is a derived field and may be calculated at the service layer.
-     */
-    @JsonProperty("age")
-    private int age;
+    private int age; // Age is a derived field and may be calculated at the service layer.
+
+    private String profilePictureUrl;
+    private String nationality;
+
 }
