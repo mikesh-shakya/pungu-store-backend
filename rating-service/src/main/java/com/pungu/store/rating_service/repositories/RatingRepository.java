@@ -2,6 +2,8 @@ package com.pungu.store.rating_service.repositories;
 
 import com.pungu.store.rating_service.entities.Rating;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,6 +14,14 @@ import java.util.Optional;
  */
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
+
+    /**
+     * Return the average rating of a specific book
+     * @param bookId ID of the book
+     * @return average rating of the book
+     */
+    @Query("select coalesce(avg(r.rating), 0) from Rating r where r.bookId = :bookId")
+    double averageForBook(@Param("bookId") Long bookId);
 
     /**
      * Retrieves all ratings for a specific book.

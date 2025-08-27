@@ -36,8 +36,6 @@ public class BookResponse {
     private String language;
     private LocalDate publicationDate;
     private String coverImageUrl;
-    private Double averageRating;
-    private List<RatingResponse> reviews;
     private boolean availableForReading;
     private boolean availableForDownload;
 }

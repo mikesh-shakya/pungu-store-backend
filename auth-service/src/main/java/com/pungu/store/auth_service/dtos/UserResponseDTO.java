@@ -32,5 +32,4 @@ public class UserResponseDTO {
 
     private String profilePictureUrl;
     private String nationality;
-
 }

@@ -1,10 +1,8 @@
 package com.pungu.store.book_service.services;
 
 import com.pungu.store.book_service.clients.AuthorClient;
-import com.pungu.store.book_service.clients.RatingReviewClient;
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
-import com.pungu.store.book_service.dtos.RatingResponse;
 import com.pungu.store.book_service.entities.Book;
 import com.pungu.store.book_service.repositories.BookRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +18,7 @@ import java.util.stream.Collectors;
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
-
     private final AuthorClient authorClient;
-
-    private final RatingReviewClient ratingReviewClient;
 
     /**
      * Creates a new book entry in the system.
@@ -135,12 +130,6 @@ public class BookServiceImpl implements BookService {
      * @return BookResponse with all book details.
      */
     private BookResponse mapToResponse(Book book) {
-        List<RatingResponse> ratings = ratingReviewClient.getRatingsForBook(book.getBookId());
-        double averageRating = ratings.stream()
-                .mapToDouble(RatingResponse::getRating)
-                .average()
-                .orElse(0.0);
-
         String authorName = book.getAuthorId() != null
                 ? authorClient.getAuthorNameById(book.getAuthorId())
                 : "Unknown Author";
@@ -155,8 +144,6 @@ public class BookServiceImpl implements BookService {
                 .genre(book.getGenre())
                 .coverImageUrl(book.getCoverImageUrl())
                 .publicationDate(book.getPublicationDate())
-                .averageRating(averageRating)
-                .reviews(ratings)
                 .availableForReading(book.isAvailableForReading())
                 .availableForDownload(book.isAvailableForDownload())
                 .language(book.getLanguage())

@@ -119,7 +119,6 @@ public class UserServiceImpl implements UserService {
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .profilePictureUrl(request.getProfilePictureUrl())
                 .nationality(request.getNationality())
                 .dateOfBirth(request.getDateOfBirth())

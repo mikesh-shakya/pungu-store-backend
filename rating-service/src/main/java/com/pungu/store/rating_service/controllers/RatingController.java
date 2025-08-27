@@ -1,8 +1,9 @@
 package com.pungu.store.rating_service.controllers;
 
-import com.pungu.store.rating_service.entities.Rating;
+import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingResponse;
 import com.pungu.store.rating_service.services.RatingService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +15,12 @@ import java.util.List;
  * and get the average rating of a book.
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/ratings")
 public class RatingController {
 
-    @Autowired
-    private RatingService ratingService;
+
+    private final RatingService ratingService;
 
     /**
      * Adds a new rating or updates an existing one for a given user and book.
@@ -27,7 +29,7 @@ public class RatingController {
      * @return the saved or updated rating
      */
     @PostMapping
-    public ResponseEntity<Rating> addOrUpdateRating(@RequestBody Rating rating) {
+    public ResponseEntity<RatingResponse> addOrUpdateRating(@RequestBody CreateRatingRequest rating) {
         return ResponseEntity.ok(ratingService.addRating(rating));
     }
 
@@ -38,7 +40,7 @@ public class RatingController {
      * @return list of ratings for the given book
      */
     @GetMapping("/book/{bookId}")
-    public ResponseEntity<List<Rating>> getRatingsByBook(@PathVariable("bookId") Long bookId) {
+    public ResponseEntity<List<RatingResponse>> getRatingsByBook(@PathVariable("bookId") Long bookId) {
         return ResponseEntity.ok(ratingService.getRatingsByBook(bookId));
     }
 
@@ -49,7 +51,7 @@ public class RatingController {
      * @return list of ratings submitted by the user
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Rating>> getRatingsByUser(@PathVariable("userId") Long userId) {
+    public ResponseEntity<List<RatingResponse>> getRatingsByUser(@PathVariable("userId") Long userId) {
         return ResponseEntity.ok(ratingService.getRatingsByUser(userId));
     }
 

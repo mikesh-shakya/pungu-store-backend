@@ -1,6 +1,7 @@
 package com.pungu.store.rating_service.services;
 
-import com.pungu.store.rating_service.entities.Rating;
+import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingResponse;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public interface RatingService {
      * @param rating the rating entity to be added
      * @return the saved rating entity
      */
-    Rating addRating(Rating rating);
+    RatingResponse addRating(CreateRatingRequest rating);
 
     /**
      * Retrieves all ratings for a specific book.
@@ -23,7 +24,7 @@ public interface RatingService {
      * @param bookId ID of the book
      * @return list of ratings for the given book
      */
-    List<Rating> getRatingsByBook(Long bookId);
+    List<RatingResponse> getRatingsByBook(Long bookId);
 
     /**
      * Retrieves all ratings submitted by a specific user.
@@ -31,7 +32,7 @@ public interface RatingService {
      * @param userId ID of the user
      * @return list of ratings given by the user
      */
-    List<Rating> getRatingsByUser(Long userId);
+    List<RatingResponse> getRatingsByUser(Long userId);
 
     /**
      * Calculates the average rating of a specific book.
@@ -47,5 +48,5 @@ public interface RatingService {
      * @param userId ID of the user
      * @return rating object or null if not found
      */
-    Rating getRatingByBookAndUser(Long bookId, Long userId);
+    RatingResponse getRatingByBookAndUser(Long bookId, Long userId);
 }

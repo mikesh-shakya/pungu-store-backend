@@ -39,7 +39,7 @@ public class UserController {
      * @param role   the new role to assign
      * @return Updated user details
      */
-    @PutMapping("/{userId}/role")
+    @PostMapping("/{userId}/role")
     public ResponseEntity<UserResponseDTO> updateUserRole(@PathVariable("userId") Long userId, @RequestBody String role) {
         UserResponseDTO updatedUser = userService.updateRole(userId, role.trim().toUpperCase());
         return ResponseEntity.ok(updatedUser);
@@ -52,7 +52,7 @@ public class UserController {
      * @param request the updated user details
      * @return the updated user response
      */
-    @PutMapping("/{userId}")
+    @PatchMapping("/{userId}")
     public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable("userId") Long userId,
             @Valid @RequestBody UserRequestDTO request

@@ -1,7 +1,12 @@
 package com.pungu.store.rating_service.services;
 
+import com.pungu.store.rating_service.clients.UserClient;
+import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingResponse;
+import com.pungu.store.rating_service.dtos.UserResponse;
 import com.pungu.store.rating_service.entities.Rating;
 import com.pungu.store.rating_service.repositories.RatingRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +22,7 @@ import java.util.Optional;
 public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
+    private final UserClient userClient;
 
     /**
      * Adds a new rating for a book by a user, or updates the existing one if already present.
@@ -24,20 +30,40 @@ public class RatingServiceImpl implements RatingService {
      * <p>If the user has already rated the book, this method will update the rating value and comment.
      * Otherwise, it will create a new rating entry.</p>
      *
-     * @param rating the Rating object containing bookId, userId, rating value, and optional comment
-     * @return the saved or updated Rating object
+     * @param ratingRequest the CreateRatingRequest object containing bookId, userId, rating value, and optional comment
+     * @return the saved or updated RatingResponse object
      */
+    @Transactional
     @Override
-    public Rating addRating(Rating rating) {
-        Optional<Rating> existingRating = ratingRepository.findByBookIdAndUserId(rating.getBookId(), rating.getUserId());
+    public RatingResponse addRating(CreateRatingRequest ratingRequest) {
+        Optional<Rating> existingRating = ratingRepository.findByBookIdAndUserId(ratingRequest.getBookId(), ratingRequest.getUserId());
 
         if (existingRating.isPresent()) {
             Rating oldRating = existingRating.get();
-            oldRating.setRating(rating.getRating());
-            return ratingRepository.save(oldRating);
+            oldRating.setRating(ratingRequest.getRating());
+            oldRating.setReview(ratingRequest.getReview());
+            return toResponse(ratingRepository.save(oldRating));
         }
 
-        return ratingRepository.save(rating);
+        // Create new rating
+        Rating toSave = Rating.builder()
+                .bookId(ratingRequest.getBookId())
+                .userId(ratingRequest.getUserId())
+                .rating(ratingRequest.getRating())
+                .review(ratingRequest.getReview())
+                .build();
+
+        // If two requests race to create, the unique constraint (bookId,userId) can throw
+        // a DataIntegrityViolationException. Catch and retry update path.
+        try {
+            return toResponse(ratingRepository.save(toSave));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            Rating old = ratingRepository.findByBookIdAndUserId(
+                    ratingRequest.getBookId(), ratingRequest.getUserId()).orElseThrow();
+            old.setRating(ratingRequest.getRating());
+            old.setReview(ratingRequest.getReview());
+            return toResponse(ratingRepository.save(old));
+        }
     }
 
     /**
@@ -47,8 +73,8 @@ public class RatingServiceImpl implements RatingService {
      * @return a list of ratings for the book
      */
     @Override
-    public List<Rating> getRatingsByBook(Long bookId) {
-        return ratingRepository.findByBookId(bookId);
+    public List<RatingResponse> getRatingsByBook(Long bookId) {
+        return ratingRepository.findByBookId(bookId).stream().map(this::toResponse).toList();
     }
 
     /**
@@ -58,8 +84,8 @@ public class RatingServiceImpl implements RatingService {
      * @return a list of ratings submitted by the user
      */
     @Override
-    public List<Rating> getRatingsByUser(Long userId) {
-        return ratingRepository.findByUserId(userId);
+    public List<RatingResponse> getRatingsByUser(Long userId) {
+        return ratingRepository.findByUserId(userId).stream().map(this::toResponse).toList();
     }
 
     /**
@@ -70,8 +96,8 @@ public class RatingServiceImpl implements RatingService {
      * @return the matching Rating object, or null if none found
      */
     @Override
-    public Rating getRatingByBookAndUser(Long bookId, Long userId) {
-        return ratingRepository.findByBookIdAndUserId(bookId, userId).orElse(null);
+    public RatingResponse getRatingByBookAndUser(Long bookId, Long userId) {
+        return ratingRepository.findByBookIdAndUserId(bookId, userId).map(this::toResponse).orElse(null);
     }
 
     /**
@@ -82,8 +108,22 @@ public class RatingServiceImpl implements RatingService {
      */
     @Override
     public double getAverageRating(Long bookId) {
-        List<Rating> ratings = ratingRepository.findByBookId(bookId);
-        if (ratings.isEmpty()) return 0.0;
-        return ratings.stream().mapToInt(Rating::getRating).average().orElse(0.0);
+        return ratingRepository.averageForBook(bookId);
+    }
+
+
+    public RatingResponse toResponse(Rating rating) {
+        UserResponse user = userClient.getUserById(rating.getUserId());
+
+        return RatingResponse.builder()
+                .ratingId(rating.getRatingId())
+                .bookId(rating.getBookId())
+                .userId(rating.getUserId())
+                .userName(user != null ? user.getFirstName() + " " + user.getLastName() : "")
+                .rating(rating.getRating())
+                .review(rating.getReview())
+                .createdAt(rating.getCreatedAt())
+                .lastUpdatedAt(rating.getLastUpdatedAt())
+                .build();
     }
 }
