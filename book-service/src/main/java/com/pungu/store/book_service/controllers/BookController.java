@@ -3,6 +3,7 @@ package com.pungu.store.book_service.controllers;
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
 import com.pungu.store.book_service.services.BookService;
+import com.pungu.store.book_service.utilities.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -49,15 +50,7 @@ public class BookController {
      */
     @GetMapping("/author/{authorId}")
     public List<BookResponse> getAllBooksByAuthor(@PathVariable("authorId") Long authorId, @RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = Sort.unsorted();
-        if (sortBy != null && !sortBy.isBlank()) {
-            List<Sort.Order> orders = Arrays.stream(sortBy.split(","))
-                    .map(String::trim)
-                    .map(field -> new Sort.Order(Sort.Direction.ASC, field))
-                    .toList();
-
-            sort = Sort.by(orders);
-        }
+        Sort sort = SortUtils.parseSort(sortBy);
         return bookService.getAllBookByAuthorId(authorId, sort);
     }
 
@@ -68,15 +61,7 @@ public class BookController {
      */
     @GetMapping("")
     public List<BookResponse> getAllBooks(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = Sort.unsorted();
-        if (sortBy != null && !sortBy.isBlank()) {
-            List<Sort.Order> orders = Arrays.stream(sortBy.split(","))
-                    .map(String::trim)
-                    .map(field -> new Sort.Order(Sort.Direction.ASC, field))
-                    .toList();
-
-            sort = Sort.by(orders);
-        }
+        Sort sort = SortUtils.parseSort(sortBy);
         return bookService.getAllBooks(sort);
     }
 

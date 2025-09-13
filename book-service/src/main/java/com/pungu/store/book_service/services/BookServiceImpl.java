@@ -44,7 +44,7 @@ public class BookServiceImpl implements BookService {
                 .availableForDownload(bookRequest.getEbookUrl() != null)
                 .build();
 
-        return mapToResponse(bookRepository.save(book));
+        return entityToResponse(bookRepository.save(book));
     }
 
     /**
@@ -57,12 +57,12 @@ public class BookServiceImpl implements BookService {
     public BookResponse getBookById(Long bookId) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new RuntimeException("Book not found"));
-        return mapToResponse(book);
+        return entityToResponse(book);
     }
 
     @Override
     public List<BookResponse> getAllBookByAuthorId(Long authorId, Sort sort) {
-        return bookRepository.findByAuthorId(authorId, sort).stream().map(this::mapToResponse).collect(Collectors.toList());
+        return bookRepository.findByAuthorId(authorId, sort).stream().map(this::entityToResponse).collect(Collectors.toList());
     }
 
     /**
@@ -74,7 +74,7 @@ public class BookServiceImpl implements BookService {
     public List<BookResponse> getAllBooks(Sort sort) {
         return bookRepository.findAll(sort)
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::entityToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -107,7 +107,7 @@ public class BookServiceImpl implements BookService {
                 .availableForDownload(bookRequest.getEbookUrl() != null)
                 .build();
 
-        return mapToResponse(bookRepository.save(updatedBook));
+        return entityToResponse(bookRepository.save(updatedBook));
     }
 
     /**
@@ -129,7 +129,7 @@ public class BookServiceImpl implements BookService {
      * @param book Book entity to map.
      * @return BookResponse with all book details.
      */
-    private BookResponse mapToResponse(Book book) {
+    private BookResponse entityToResponse(Book book) {
         String authorName = book.getAuthorId() != null
                 ? authorClient.getAuthorNameById(book.getAuthorId())
                 : "Unknown Author";

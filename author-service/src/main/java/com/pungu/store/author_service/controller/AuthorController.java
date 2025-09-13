@@ -3,6 +3,7 @@ package com.pungu.store.author_service.controller;
 import com.pungu.store.author_service.dto.AuthorRequest;
 import com.pungu.store.author_service.dto.AuthorResponse;
 import com.pungu.store.author_service.service.AuthorService;
+import com.pungu.store.author_service.utilities.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -52,15 +53,7 @@ public class AuthorController {
      */
     @GetMapping()
     public ResponseEntity<List<AuthorResponse>> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = Sort.unsorted();
-        if (sortBy != null && !sortBy.isBlank()) {
-            List<Sort.Order> orders = Arrays.stream(sortBy.split(","))
-                    .map(String::trim)
-                    .map(field -> new Sort.Order(Sort.Direction.ASC, field))
-                    .toList();
-
-            sort = Sort.by(orders);
-        }
+        Sort sort = SortUtils.parseSort(sortBy);
         return ResponseEntity.ok(authorService.getAllAuthors(sort));
     }
 
