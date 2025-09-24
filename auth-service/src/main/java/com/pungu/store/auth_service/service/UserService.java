@@ -6,8 +6,6 @@ import com.pungu.store.auth_service.dtos.UserRequestDTO;
 import com.pungu.store.auth_service.dtos.UserResponseDTO;
 import jakarta.validation.Valid;
 
-import java.util.Optional;
-
 /**
  * Service interface for managing user authentication and registration.
  */

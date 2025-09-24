@@ -1,6 +1,5 @@
 package com.pungu.store.book_service.dtos;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 

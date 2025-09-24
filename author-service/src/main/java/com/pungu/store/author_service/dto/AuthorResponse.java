@@ -1,7 +1,8 @@
 package com.pungu.store.author_service.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
 import java.time.LocalDate;
 
