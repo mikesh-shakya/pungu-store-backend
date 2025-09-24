@@ -7,7 +7,6 @@ import java.time.LocalDate;
 /**
  * DTO used to send detailed book information to the client.
  * Includes metadata about the book, author, reviews, and availability.
- *
  * Fields:
  * - bookId: The id of the book
  * - title: The title of the book
