@@ -1,7 +1,7 @@
 package com.pungu.store.rating_service.clients;
 
-import com.pungu.store.rating_service.dtos.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -9,11 +9,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface UserClient {
     /**
      * Retrieves the name of a user given their ID.
-     * Useful when displaying username using only the stored user ID.
      *
      * @param userId the unique ID of the user
      * @return the id and full name of the user
      */
-    @GetMapping("/api/users/{userId}")
-    UserResponse getUserById(@PathVariable("userId") Long userId);
+    @GetMapping(value = "/api/users/username/{userId}", produces = MediaType.TEXT_PLAIN_VALUE)
+    String getUserNameById(@PathVariable("userId") Long userId);
 }

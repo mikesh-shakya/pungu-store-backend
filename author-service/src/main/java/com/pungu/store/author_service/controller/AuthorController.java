@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -25,6 +24,19 @@ public class AuthorController {
     private final AuthorService authorService;
 
     /**
+     * Retrieves all authors.
+     *
+     * @return a list of all author responses
+     */
+    @GetMapping()
+    @ResponseStatus(HttpStatus.OK)
+    public List<AuthorResponse> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
+        Sort sort = SortUtils.parseSort(sortBy);
+        return authorService.getAllAuthors(sort);
+    }
+
+
+    /**
      * Creates a new author.
      *
      * @param request the author details
@@ -32,7 +44,8 @@ public class AuthorController {
      */
     @PostMapping()
     public ResponseEntity<AuthorResponse> createAuthor(@Valid @RequestBody AuthorRequest request) {
-        return ResponseEntity.ok(authorService.createAuthor(request));
+        AuthorResponse response = authorService.createAuthor(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
@@ -43,25 +56,15 @@ public class AuthorController {
      */
     @GetMapping("/{authorId}")
     public ResponseEntity<AuthorResponse> getAuthorById(@PathVariable("authorId") Long authorId) {
-        return ResponseEntity.ok(authorService.getAuthorById(authorId));
+        return new ResponseEntity<>(authorService.getAuthorById(authorId), HttpStatus.OK);
     }
 
-    /**
-     * Retrieves all authors.
-     *
-     * @return a list of all author responses
-     */
-    @GetMapping()
-    public ResponseEntity<List<AuthorResponse>> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = SortUtils.parseSort(sortBy);
-        return ResponseEntity.ok(authorService.getAllAuthors(sort));
-    }
 
     /**
      * Updates an existing author by ID.
      *
      * @param authorId the ID of the author to update
-     * @param request the updated author details
+     * @param request  the updated author details
      * @return the updated author response
      */
     @PutMapping("/{authorId}")

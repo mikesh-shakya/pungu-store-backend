@@ -16,7 +16,7 @@ spring:
       max-request-size: 100MB
 
 server:
-  port: 8083
+  port: 8087
 
 logging:
   level:

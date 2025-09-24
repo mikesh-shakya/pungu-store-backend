@@ -1,6 +1,6 @@
 package com.pungu.store.rating_service.services;
 
-import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingRequest;
 import com.pungu.store.rating_service.dtos.RatingResponse;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public interface RatingService {
      * @param rating the rating entity to be added
      * @return the saved rating entity
      */
-    RatingResponse addRating(CreateRatingRequest rating);
+    RatingResponse addOrUpdateRating(RatingRequest rating);
 
     /**
      * Retrieves all ratings for a specific book.

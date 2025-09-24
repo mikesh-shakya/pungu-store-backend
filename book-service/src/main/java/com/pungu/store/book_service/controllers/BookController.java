@@ -8,9 +8,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -21,25 +21,27 @@ public class BookController {
     private final BookService bookService;
 
     /**
+     * Retrieves all books.
+     *
+     * @return List of all BookResponse objects
+     */
+    @GetMapping("")
+    @ResponseStatus(HttpStatus.OK)
+    public List<BookResponse> getAllBooks(@RequestParam(value = "sortBy", required = false) String sortBy) {
+        Sort sort = SortUtils.parseSort(sortBy);
+        return bookService.getAllBooks(sort);
+    }
+
+    /**
      * Adds a new book using provided book details.
      *
      * @param bookRequest BookRequest DTO containing book details
      * @return Created BookResponse
      */
     @PostMapping()
-    public BookResponse createBook(@Valid @RequestBody BookRequest bookRequest) {
-        return bookService.createBook(bookRequest);
-    }
-
-    /**
-     * Fetches a book by its ID.
-     *
-     * @param bookId ID of the book
-     * @return BookResponse for the specified ID
-     */
-    @GetMapping("/{bookId}")
-    public BookResponse getBookById(@PathVariable("bookId") Long bookId) {
-        return bookService.getBookById(bookId);
+    public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookRequest bookRequest) {
+        BookResponse response = bookService.createBook(bookRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
@@ -49,20 +51,21 @@ public class BookController {
      * @return List of all BookResponse for the specified ID
      */
     @GetMapping("/author/{authorId}")
+    @ResponseStatus(HttpStatus.OK)
     public List<BookResponse> getAllBooksByAuthor(@PathVariable("authorId") Long authorId, @RequestParam(value = "sortBy", required = false) String sortBy) {
         Sort sort = SortUtils.parseSort(sortBy);
         return bookService.getAllBookByAuthorId(authorId, sort);
     }
 
     /**
-     * Retrieves all books.
+     * Fetches a book by its ID.
      *
-     * @return List of all BookResponse objects
+     * @param bookId ID of the book
+     * @return BookResponse for the specified ID
      */
-    @GetMapping("")
-    public List<BookResponse> getAllBooks(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = SortUtils.parseSort(sortBy);
-        return bookService.getAllBooks(sort);
+    @GetMapping("/{bookId}")
+    public ResponseEntity<BookResponse> getBookById(@PathVariable("bookId") Long bookId) {
+        return new ResponseEntity<>(bookService.getBookById(bookId), HttpStatus.OK);
     }
 
     /**
@@ -83,7 +86,6 @@ public class BookController {
      * @param bookId ID of the book to delete
      */
     @DeleteMapping("/{bookId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBook(@PathVariable("bookId") Long bookId) {
         bookService.deleteBook(bookId);
     }

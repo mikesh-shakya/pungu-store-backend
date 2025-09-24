@@ -50,6 +50,7 @@ public class Rating {
      */
     @Column(nullable = false)
     private Long userId;
+    private String userName;
 
     /**
      * Star rating value (from 1 to 5).

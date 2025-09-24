@@ -1,13 +1,15 @@
 package com.pungu.store.rating_service.controllers;
 
-import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingRequest;
 import com.pungu.store.rating_service.dtos.RatingResponse;
 import com.pungu.store.rating_service.services.RatingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for managing book ratings.
@@ -29,8 +31,8 @@ public class RatingController {
      * @return the saved or updated rating
      */
     @PostMapping
-    public ResponseEntity<RatingResponse> addOrUpdateRating(@RequestBody CreateRatingRequest rating) {
-        return ResponseEntity.ok(ratingService.addRating(rating));
+    public ResponseEntity<RatingResponse> addOrUpdateRating(@RequestBody RatingRequest rating) {
+        return ResponseEntity.ok(ratingService.addOrUpdateRating(rating));
     }
 
     /**
@@ -62,7 +64,9 @@ public class RatingController {
      * @return average rating of the book
      */
     @GetMapping("/book/{bookId}/average")
-    public ResponseEntity<Double> getAverageRating(@PathVariable("bookId") Long bookId) {
-        return ResponseEntity.ok(ratingService.getAverageRating(bookId));
+    public ResponseEntity<Map<String, Object>> getAverageRating(@PathVariable("bookId") Long bookId) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("averageRating", ratingService.getAverageRating(bookId));
+        return ResponseEntity.ok(response);
     }
 }

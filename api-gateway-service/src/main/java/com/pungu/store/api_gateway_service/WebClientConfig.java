@@ -7,11 +7,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
-
     @Bean
-    @LoadBalanced  // This enables Eureka-based resolution
-    public WebClient webClient(WebClient.Builder builder) {
-        return builder.build();
+    @LoadBalanced
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        return WebClient.builder();
+    }
+
+    // optional convenience: built WebClient — but prefer injecting the builder for flexibility
+    @Bean
+    public WebClient webClient(WebClient.Builder loadBalancedWebClientBuilder) {
+        return loadBalancedWebClientBuilder.build();
     }
 }
-

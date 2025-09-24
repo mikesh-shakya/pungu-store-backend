@@ -11,5 +11,6 @@ import java.util.List;
 public interface BookRepository extends JpaRepository<Book, Long> {
         List<Book> findByAuthorId(Long authorId, Sort sort);
         boolean existsById(Long bookId);
+        boolean existsByTitleIgnoreCase(String title);
 
 }

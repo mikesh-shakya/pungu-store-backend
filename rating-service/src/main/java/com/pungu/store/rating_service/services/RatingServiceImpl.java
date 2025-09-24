@@ -1,9 +1,8 @@
 package com.pungu.store.rating_service.services;
 
 import com.pungu.store.rating_service.clients.UserClient;
-import com.pungu.store.rating_service.dtos.CreateRatingRequest;
+import com.pungu.store.rating_service.dtos.RatingRequest;
 import com.pungu.store.rating_service.dtos.RatingResponse;
-import com.pungu.store.rating_service.dtos.UserResponse;
 import com.pungu.store.rating_service.entities.Rating;
 import com.pungu.store.rating_service.repositories.RatingRepository;
 import jakarta.transaction.Transactional;
@@ -33,9 +32,9 @@ public class RatingServiceImpl implements RatingService {
      * @param ratingRequest the CreateRatingRequest object containing bookId, userId, rating value, and optional comment
      * @return the saved or updated RatingResponse object
      */
-    @Transactional
     @Override
-    public RatingResponse addRating(CreateRatingRequest ratingRequest) {
+    @Transactional
+    public RatingResponse addOrUpdateRating(RatingRequest ratingRequest) {
         Optional<Rating> existingRating = ratingRepository.findByBookIdAndUserId(ratingRequest.getBookId(), ratingRequest.getUserId());
 
         if (existingRating.isPresent()) {
@@ -46,7 +45,7 @@ public class RatingServiceImpl implements RatingService {
         }
 
         // Create new rating
-        Rating toSave = Rating.builder()
+        Rating newReview = Rating.builder()
                 .bookId(ratingRequest.getBookId())
                 .userId(ratingRequest.getUserId())
                 .rating(ratingRequest.getRating())
@@ -56,7 +55,7 @@ public class RatingServiceImpl implements RatingService {
         // If two requests race to create, the unique constraint (bookId,userId) can throw
         // a DataIntegrityViolationException. Catch and retry update path.
         try {
-            return toResponse(ratingRepository.save(toSave));
+            return toResponse(ratingRepository.save(newReview));
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             Rating old = ratingRepository.findByBookIdAndUserId(
                     ratingRequest.getBookId(), ratingRequest.getUserId()).orElseThrow();
@@ -113,13 +112,13 @@ public class RatingServiceImpl implements RatingService {
 
 
     public RatingResponse toResponse(Rating rating) {
-        UserResponse user = userClient.getUserById(rating.getUserId());
+        String username = userClient.getUserNameById(rating.getUserId());
 
         return RatingResponse.builder()
                 .ratingId(rating.getRatingId())
                 .bookId(rating.getBookId())
                 .userId(rating.getUserId())
-                .userName(user != null ? user.getFirstName() + " " + user.getLastName() : "")
+                .userName(username)
                 .rating(rating.getRating())
                 .review(rating.getReview())
                 .createdAt(rating.getCreatedAt())
