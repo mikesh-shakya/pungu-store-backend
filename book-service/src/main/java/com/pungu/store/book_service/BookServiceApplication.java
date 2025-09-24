@@ -6,7 +6,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
-@EnableFeignClients(basePackages = "com.pungu.store.book_service.clients")
+@EnableFeignClients
 @EnableDiscoveryClient
 public class BookServiceApplication {
 

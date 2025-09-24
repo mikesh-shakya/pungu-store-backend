@@ -7,6 +7,7 @@ import com.pungu.store.rating_service.entities.Rating;
 import com.pungu.store.rating_service.repositories.RatingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Optional;
  */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
@@ -38,6 +40,7 @@ public class RatingServiceImpl implements RatingService {
         Optional<Rating> existingRating = ratingRepository.findByBookIdAndUserId(ratingRequest.getBookId(), ratingRequest.getUserId());
 
         if (existingRating.isPresent()) {
+            log.info("The rating already exists for this book {} by this user with user id {}.", ratingRequest.getBookId(), ratingRequest.getUserId());
             Rating oldRating = existingRating.get();
             oldRating.setRating(ratingRequest.getRating());
             oldRating.setReview(ratingRequest.getReview());
@@ -45,6 +48,8 @@ public class RatingServiceImpl implements RatingService {
         }
 
         // Create new rating
+        log.info("There is no rating for this book {} by this user with user id {}.", ratingRequest.getBookId(), ratingRequest.getUserId());
+        log.info("Creating a new rating...");
         Rating newReview = Rating.builder()
                 .bookId(ratingRequest.getBookId())
                 .userId(ratingRequest.getUserId())
@@ -113,7 +118,6 @@ public class RatingServiceImpl implements RatingService {
 
     public RatingResponse toResponse(Rating rating) {
         String username = userClient.getUserNameById(rating.getUserId());
-
         return RatingResponse.builder()
                 .ratingId(rating.getRatingId())
                 .bookId(rating.getBookId())
