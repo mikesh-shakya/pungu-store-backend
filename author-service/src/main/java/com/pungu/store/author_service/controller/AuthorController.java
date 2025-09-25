@@ -2,16 +2,16 @@ package com.pungu.store.author_service.controller;
 
 import com.pungu.store.author_service.dto.AuthorRequest;
 import com.pungu.store.author_service.dto.AuthorResponse;
+import com.pungu.store.author_service.dto.SliceResponse;
 import com.pungu.store.author_service.service.AuthorService;
 import com.pungu.store.author_service.utilities.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * REST controller for managing authors.
@@ -26,13 +26,28 @@ public class AuthorController {
     /**
      * Retrieves all authors.
      *
+     * @param offset the page index (0-based)
+     * @param limit the maximum number of authors to return per page
+     * @param orderBy optional sort criteria, e.g. "fullName:asc,dateOfBirth:desc" or "-name,createdDate" (dash prefix means DESC)
+     * @param prefix optional filter to match authors whose full name or pen name starts with the given value
+     *
      * @return a list of all author responses
      */
     @GetMapping()
     @ResponseStatus(HttpStatus.OK)
-    public List<AuthorResponse> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = SortUtils.parseSort(sortBy);
-        return authorService.getAllAuthors(sort);
+    public SliceResponse<AuthorResponse> getAllAuthors(
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "orderBy", required = false) String orderBy,
+            @RequestParam(value = "name", required = false) String prefix
+    ) {
+        Pageable pageable = PageRequest.of(offset, limit, SortUtils.parseSort(orderBy));
+
+        if (prefix == null || prefix.isEmpty()) {
+            return authorService.getAllAuthors(pageable);
+        } else {
+            return authorService.getAuthorByFullNameOrPenNameStartingWith(prefix, pageable);
+        }
     }
 
 

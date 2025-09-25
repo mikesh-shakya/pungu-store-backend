@@ -2,18 +2,20 @@ package com.pungu.store.author_service.service;
 
 import com.pungu.store.author_service.dto.AuthorRequest;
 import com.pungu.store.author_service.dto.AuthorResponse;
+import com.pungu.store.author_service.dto.SliceResponse;
 import com.pungu.store.author_service.exception.AuthorNotFoundException;
 import com.pungu.store.author_service.exception.DuplicateAuthorException;
 import com.pungu.store.author_service.model.Author;
 import com.pungu.store.author_service.repository.AuthorRepository;
+import com.pungu.store.author_service.utilities.SliceResponseUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service class responsible for managing author-related business logic.
@@ -29,10 +31,12 @@ public class AuthorService {
      *
      * @return List of AuthorResponse objects representing all authors.
      */
-    public List<AuthorResponse> getAllAuthors(Sort sort) {
-        return authorRepository.findAll(sort).stream()
+    public SliceResponse<AuthorResponse> getAllAuthors(Pageable pageable) {
+        Slice<Author> authorList = authorRepository.findAllBy(pageable);
+        List<AuthorResponse> content = authorList.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, authorList);
     }
 
 
@@ -75,6 +79,21 @@ public class AuthorService {
         Author author = authorRepository.findById(authorId)
                 .orElseThrow(() -> new AuthorNotFoundException("There is no author found for this author id " + authorId));
         return mapToResponse(author);
+    }
+
+
+    /**
+     * Retrieves a specific author by their ID.
+     *
+     * @param prefix full name or pen name of the author.
+     * @return List of AuthorResponse object containing author details.
+     */
+    public SliceResponse<AuthorResponse> getAuthorByFullNameOrPenNameStartingWith(String prefix, Pageable pageable) {
+        Slice<Author> authorList = authorRepository.findByFullNameStartingWithIgnoreCaseOrPenNameStartingWithIgnoreCase(prefix, prefix, pageable);
+        List<AuthorResponse> content = authorList.stream()
+                .map(this::mapToResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, authorList);
     }
 
 

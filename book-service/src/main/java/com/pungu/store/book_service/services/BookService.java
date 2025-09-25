@@ -2,62 +2,82 @@ package com.pungu.store.book_service.services;
 
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
-import org.springframework.data.domain.Sort;
+import com.pungu.store.book_service.dtos.SliceResponse;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 /**
- * Service interface for managing books and their associated files.
- * Defines business operations related to books in the bookstore application.
+ * Service interface for managing books and their associated business operations.
+ *
+ * <p>Defines the contract for creating, updating, deleting, and retrieving books
+ * within the bookstore application. Supports slice-based pagination for efficient
+ * navigation of large datasets as well as specific queries (e.g., by ID or author).</p>
  */
 @Service
 public interface BookService {
 
     /**
-     * Creates a new book entry.
+     * Retrieves a slice of all books with pagination support.
      *
-     * @param bookRequest The book request data containing book details.
-     * @return The created book as a BookResponse.
+     * <p>This method does not return the total count of books but only indicates whether
+     * another slice exists. This makes it efficient for large datasets and infinite
+     * scrolling scenarios.</p>
+     *
+     * @param pageable pagination information (page index, size, and sort order)
+     * @return a {@link SliceResponse} containing the current slice of {@link BookResponse} DTOs
+     *         and pagination metadata
+     */
+    SliceResponse<BookResponse> getAllBooks(Pageable pageable);
+
+    /**
+     * Creates a new book entry in the system.
+     *
+     * @param bookRequest the request DTO containing book details
+     * @return the created {@link BookResponse} DTO with persisted details
      */
     BookResponse createBook(BookRequest bookRequest);
 
     /**
-     * Retrieves a book by its ID.
+     * Retrieves a book by its unique identifier.
      *
-     * @param bookId The ID of the book.
-     * @return BookResponse containing book details.
+     * @param bookId the unique identifier of the book to retrieve
+     * @return the {@link BookResponse} containing book details
      */
     BookResponse getBookById(Long bookId);
 
     /**
-     * Retrieves all book by an author ID.
+     * Retrieves all books written by a specific author.
      *
-     * @param authorId The ID of the author.
-     * @return BookResponse containing book details.
+     * @param authorId the unique identifier of the author
+     * @param pageable pagination and optional sorting information
+     * @return a {@link SliceResponse} containing {@link BookResponse} DTOs for the given author
      */
-    List<BookResponse> getAllBookByAuthorId(Long authorId, Sort sort);
+    SliceResponse<BookResponse> getAllBookByAuthorId(Long authorId, Pageable pageable);
 
     /**
-     * Retrieves all books.
+     * Updates the details of an existing book.
      *
-     * @return A list of BookResponse objects.
-     */
-    List<BookResponse> getAllBooks(Sort sort);
-
-    /**
-     * Updates an existing book's details.
-     *
-     * @param bookId      The ID of the book to be updated.
-     * @param bookRequest The updated book data.
-     * @return The updated BookResponse.
+     * @param bookId      the unique identifier of the book to update
+     * @param bookRequest the DTO containing the updated book data
+     * @return the updated {@link BookResponse}
      */
     BookResponse updateBook(Long bookId, BookRequest bookRequest);
 
     /**
-     * Deletes a book by its ID.
+     * Deletes a book from the system.
      *
-     * @param bookId The ID of the book to be deleted.
+     * @param bookId the unique identifier of the book to delete
      */
     void deleteBook(Long bookId);
+
+    /**
+     * Retrieves a slice of books whose titles start with the given prefix (case-insensitive).
+     *
+     * <p>Useful for implementing search-as-you-type or autocomplete functionality.</p>
+     *
+     * @param title    the title prefix to filter by (e.g., {@code "Ha"} for "Harry Potter")
+     * @param pageable pagination information (page index, size, and sort order)
+     * @return a {@link SliceResponse} containing the current slice of matching {@link BookResponse} DTOs
+     */
+    SliceResponse<BookResponse> getAllBooksStartingWithTitle(String title, Pageable pageable);
 }

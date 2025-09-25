@@ -19,4 +19,5 @@ public class AuthorResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfDeath;
     private String profilePictureUrl;
+
 }

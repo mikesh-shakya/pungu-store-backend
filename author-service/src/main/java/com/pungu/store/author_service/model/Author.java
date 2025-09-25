@@ -31,11 +31,13 @@ public class Author {
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdatedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.lastUpdatedAt = LocalDateTime.now();
     }
+
     @PreUpdate
     protected void onUpdate() {
         this.lastUpdatedAt = LocalDateTime.now();

@@ -3,19 +3,34 @@ package com.pungu.store.rating_service.services;
 import com.pungu.store.rating_service.clients.UserClient;
 import com.pungu.store.rating_service.dtos.RatingRequest;
 import com.pungu.store.rating_service.dtos.RatingResponse;
+import com.pungu.store.rating_service.dtos.SliceResponse;
 import com.pungu.store.rating_service.entities.Rating;
 import com.pungu.store.rating_service.repositories.RatingRepository;
+import com.pungu.store.rating_service.utilities.SliceResponseUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Implementation of the RatingService interface.
- * Provides functionality to manage and query book ratings.
+ * Concrete implementation of {@link RatingService} that provides operations to create,
+ * update and query {@link Rating} entities.
+ *
+ * <p>This service delegates persistence to {@link RatingRepository} and resolves user-related
+ * information (username) through {@link UserClient}.</p>
+ *
+ * <p>Concurrency note: {@link #addOrUpdateRating(RatingRequest)} implements a
+ * create-or-update pattern and handles the case where two concurrent requests race to create
+ * the same (bookId, userId) rating by catching a {@code DataIntegrityViolationException}
+ * and retrying the update path.</p>
+ *
+ * @author YourName
+ * @since 1.0
  */
 @RequiredArgsConstructor
 @Service
@@ -26,13 +41,20 @@ public class RatingServiceImpl implements RatingService {
     private final UserClient userClient;
 
     /**
-     * Adds a new rating for a book by a user, or updates the existing one if already present.
+     * Adds a new rating for the specified book by the specified user, or updates the existing
+     * rating if one already exists.
      *
-     * <p>If the user has already rated the book, this method will update the rating value and comment.
-     * Otherwise, it will create a new rating entry.</p>
+     * <p>This method is transactional. If a rating for the same (bookId, userId) already
+     * exists in the database, the existing rating's value and review are updated. If no
+     * rating exists, a new {@link Rating} is created. To handle concurrent creates that
+     * violate the unique constraint on (bookId, userId), the method catches
+     * {@code org.springframework.dao.DataIntegrityViolationException} and retries the update
+     * (fetch + save) path.</p>
      *
-     * @param ratingRequest the CreateRatingRequest object containing bookId, userId, rating value, and optional comment
-     * @return the saved or updated RatingResponse object
+     * @param ratingRequest the DTO containing {@code bookId}, {@code userId}, {@code rating}
+     *                      value and optional {@code review} text; must not be {@code null}
+     * @return a {@link RatingResponse} representing the saved or updated rating
+     * @see org.springframework.dao.DataIntegrityViolationException
      */
     @Override
     @Transactional
@@ -71,33 +93,47 @@ public class RatingServiceImpl implements RatingService {
     }
 
     /**
-     * Retrieves all ratings for a given book.
+     * Retrieves a paged slice of ratings for the specified book.
      *
-     * @param bookId the ID of the book
-     * @return a list of ratings for the book
+     * <p>Returns a {@link SliceResponse} containing mapped {@link RatingResponse} DTOs and
+     * pagination metadata. Uses {@link Slice} (rather than {@code Page}) to avoid an expensive
+     * total-count query when not necessary (useful for cursor-like or infinite-scroll UIs).</p>
+     *
+     * @param bookId   the ID of the book whose ratings should be fetched
+     * @param pageable {@link Pageable} controlling pagination and optional sorting; must not be {@code null}
+     * @return a {@link SliceResponse} of {@link RatingResponse} DTOs for the requested page
      */
     @Override
-    public List<RatingResponse> getRatingsByBook(Long bookId) {
-        return ratingRepository.findByBookId(bookId).stream().map(this::toResponse).toList();
+    public SliceResponse<RatingResponse> getRatingsByBook(Long bookId, Pageable pageable) {
+        Slice<Rating> ratingList = ratingRepository.findByBookId(bookId, pageable);
+        List<RatingResponse> content = ratingList.stream()
+                .map(this::toResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, ratingList);
     }
 
     /**
-     * Retrieves all ratings submitted by a specific user.
+     * Retrieves a paged slice of ratings submitted by the specified user.
      *
-     * @param userId the ID of the user
-     * @return a list of ratings submitted by the user
+     * @param userId   the ID of the user whose ratings should be fetched
+     * @param pageable {@link Pageable} controlling pagination and optional sorting; must not be {@code null}
+     * @return a {@link SliceResponse} of {@link RatingResponse} DTOs for the requested page
      */
     @Override
-    public List<RatingResponse> getRatingsByUser(Long userId) {
-        return ratingRepository.findByUserId(userId).stream().map(this::toResponse).toList();
+    public SliceResponse<RatingResponse> getRatingsByUser(Long userId, Pageable pageable) {
+        Slice<Rating> ratingList = ratingRepository.findByUserId(userId, pageable);
+        List<RatingResponse> content = ratingList.stream()
+                .map(this::toResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, ratingList);
     }
 
     /**
-     * Retrieves the rating for a specific book submitted by a specific user.
+     * Retrieves the rating submitted by a specific user for a specific book.
      *
      * @param bookId the ID of the book
      * @param userId the ID of the user
-     * @return the matching Rating object, or null if none found
+     * @return a {@link RatingResponse} for the matching rating, or {@code null} if no rating exists
      */
     @Override
     public RatingResponse getRatingByBookAndUser(Long bookId, Long userId) {
@@ -105,17 +141,32 @@ public class RatingServiceImpl implements RatingService {
     }
 
     /**
-     * Calculates the average rating for a specific book.
+     * Calculates and returns the average rating value for the specified book.
+     *
+     * <p>Delegates to {@link RatingRepository#averageForBook(Long)} which should return {@code 0.0}
+     * (or an appropriate neutral value) when no ratings exist for the book. Confirm repository
+     * behavior if a different fallback value is desired.</p>
      *
      * @param bookId the ID of the book
-     * @return the average rating value, or 0.0 if no ratings are found
+     * @return the average rating as a {@code double}; repository-specific fallback (e.g. {@code 0.0})
+     *         is returned when there are no ratings
      */
     @Override
     public double getAverageRating(Long bookId) {
         return ratingRepository.averageForBook(bookId);
     }
 
-
+    /**
+     * Maps a {@link Rating} entity to its {@link RatingResponse} DTO.
+     *
+     * <p>This method resolves the reviewer's username by calling {@link UserClient#getUserNameById(Long)}.
+     * Note that the user client call may propagate runtime exceptions (e.g., if the user service is
+     * unavailable or returns an error), which callers should be prepared to handle.</p>
+     *
+     * @param rating the {@link Rating} entity to map; must not be {@code null}
+     * @return a populated {@link RatingResponse} DTO
+     * @throws RuntimeException if {@link UserClient#getUserNameById(Long)} fails (e.g. downstream error)
+     */
     public RatingResponse toResponse(Rating rating) {
         String username = userClient.getUserNameById(rating.getUserId());
         return RatingResponse.builder()
