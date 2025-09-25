@@ -27,10 +27,9 @@ public class UserController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable("userId") Long userId) {
-        return userService.getUserById(userId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(userService.getUserById(userId));
     }
+
 
     /**
      * Update the role of a user by ID.
@@ -39,7 +38,7 @@ public class UserController {
      * @param role   the new role to assign
      * @return Updated user details
      */
-    @PutMapping("/{userId}/role")
+    @PostMapping("/{userId}/role")
     public ResponseEntity<UserResponseDTO> updateUserRole(@PathVariable("userId") Long userId, @RequestBody String role) {
         UserResponseDTO updatedUser = userService.updateRole(userId, role.trim().toUpperCase());
         return ResponseEntity.ok(updatedUser);
@@ -52,26 +51,37 @@ public class UserController {
      * @param request the updated user details
      * @return the updated user response
      */
-    @PutMapping("/{userId}")
-    public ResponseEntity<UserResponseDTO> updateUser(
+    @PatchMapping("/{userId}")
+    public UserResponseDTO updateUser(
             @PathVariable("userId") Long userId,
             @Valid @RequestBody UserRequestDTO request
     ) {
-        return ResponseEntity.ok(userService.updateUser(userId, request));
+        return userService.updateUser(userId, request);
     }
 
 
     /**
-     * Deletes an user by ID.
+     * Deletes a user by ID.
      *
      * @param userId the ID of the user to delete
      * @return a success message
      */
     @DeleteMapping("/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<String> deleteUser(@PathVariable("userId") Long userId) {
+    public void deleteUser(@PathVariable("userId") Long userId) {
         userService.deleteUser(userId);
-        return ResponseEntity.ok("User deleted successfully");
     }
+
+    /**
+     * Get a username by their unique ID.
+     *
+     * @param userId the ID of the user
+     * @return User details if found, otherwise 404 Not Found
+     */
+    @GetMapping("/username/{userId}")
+    public ResponseEntity<String> getUserNameById(@PathVariable("userId") Long userId) {
+        return ResponseEntity.ok(userService.getUserNameById(userId));
+    }
+
 
 }

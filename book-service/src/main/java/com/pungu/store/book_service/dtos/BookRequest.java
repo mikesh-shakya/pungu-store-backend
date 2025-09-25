@@ -11,12 +11,12 @@ import java.time.LocalDate;
  *
  * Fields:
  * - title: Book title (must not be blank)
- * - description: Optional description of the book
+ * - authorId: Foreign key reference to the Author
  * - genre: Genre of the book (must not be blank)
- * - ebookUrl: Optional URL pointing to the book file
+ * - language: The language of the book
+ * - description: Optional description of the book
  * - coverImageUrl: Optional URL for the book's cover image
  * - publicationYear: Optional publication date (just year may be acceptable)
- * - authorId: Optional foreign key reference to the Author (from Author Service)
  */
 @Data
 public class BookRequest {
@@ -24,12 +24,10 @@ public class BookRequest {
     @NotBlank(message = "Title cannot be blank")
     private String title;
     private Long authorId;
-    private String authorName;
     @NotBlank(message = "Genre cannot be blank")
     private String genre;
     private String language;
-    private LocalDate publicationDate;
     private String description;
-    private String ebookUrl;
     private String coverImageUrl;
+    private LocalDate publicationDate;
 }

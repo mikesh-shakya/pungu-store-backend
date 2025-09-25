@@ -23,6 +23,9 @@ jwt:
 
 logging:
   level:
+    com:
+      pungu:
+        store: DEBUG
     org:
       springframework:
         security: DEBUG

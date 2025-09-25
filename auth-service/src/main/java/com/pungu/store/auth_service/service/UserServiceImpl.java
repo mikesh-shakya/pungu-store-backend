@@ -17,8 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 /**
  * Implementation of UserService interface handling authentication and registration.
  */
@@ -37,15 +35,29 @@ public class UserServiceImpl implements UserService {
      * Fetch user by ID and convert to DTO.
      */
     @Override
-    public Optional<UserResponseDTO> getUserById(Long userId) {
-        return userRepository.findByUserId(userId)
-                .map(userMapper::convertUserToUserResponseDTO);
+    public UserResponseDTO getUserById(Long userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("There is no user found for this user id " + userId));
+        return userMapper.convertUserToUserResponseDTO(user);
     }
+
+
+    /**
+     * Fetch user by ID and convert to DTO.
+     */
+    @Override
+    public String getUserNameById(Long userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("There is no user found for this user id " + userId));
+        return user.getFirstName() + " " + user.getLastName();
+    }
+
 
     /**
      * Register a new user.
      */
     @Override
+    @Transactional
     public UserResponseDTO registerUser(UserRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateUserException("User with this email already exists.");
@@ -74,9 +86,8 @@ public class UserServiceImpl implements UserService {
 
         // Load user from DB
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException("No user found with this email."));
+                .orElseThrow(() -> new UserNotFoundException("There is no user found for this email id " + request.getEmail()));
 
-        // Generate JWT token
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         String jwtToken = jwtTokenHelper.generateToken(userDetails);
 
@@ -92,41 +103,43 @@ public class UserServiceImpl implements UserService {
      * Update the role of a user.
      */
     @Override
+    @Transactional
     public UserResponseDTO updateRole(long userId, String role) {
         Role roleEnum = Role.fromString(role);
-
         User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("No such user found."));
+                .orElseThrow(() -> new UserNotFoundException("There is no user found for this user id " + userId));
 
         user.setRole(roleEnum);
-        return userMapper.convertUserToUserResponseDTO( userRepository.save(user));
+        return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
+    }
+
+
+    @Override
+    @Transactional
+    public UserResponseDTO updateUser(Long userId, UserRequestDTO request) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("There is no user found for this user id " + userId);
+        }
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .dateOfBirth(request.getDateOfBirth())
+                .profilePictureUrl(request.getProfilePictureUrl())
+                .nationality(request.getNationality())
+                .build();
+
+        return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
     }
 
     @Override
     @Transactional
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("No such user found.");
+            throw new UserNotFoundException("There is no user found for this user id " + userId);
         }
         userRepository.deleteById(userId);
     }
 
-    @Override
-    public UserResponseDTO updateUser(Long userId, UserRequestDTO request) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("No such user found.");
-        }
-        User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .profilePictureUrl(request.getProfilePictureUrl())
-                .nationality(request.getNationality())
-                .dateOfBirth(request.getDateOfBirth())
-                .build();
-
-        return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
-    }
 
     /**
      * Internal method to authenticate username and password.
@@ -139,4 +152,5 @@ public class UserServiceImpl implements UserService {
             throw new InvalidLoginRequest("Invalid email or password");
         }
     }
+
 }

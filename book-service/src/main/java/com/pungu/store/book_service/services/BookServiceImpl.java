@@ -1,166 +1,241 @@
 package com.pungu.store.book_service.services;
 
 import com.pungu.store.book_service.clients.AuthorClient;
-import com.pungu.store.book_service.clients.RatingReviewClient;
 import com.pungu.store.book_service.dtos.BookRequest;
 import com.pungu.store.book_service.dtos.BookResponse;
-import com.pungu.store.book_service.dtos.RatingResponse;
+import com.pungu.store.book_service.dtos.SliceResponse;
 import com.pungu.store.book_service.entities.Book;
+import com.pungu.store.book_service.exceptions.BookAlreadyExistsException;
+import com.pungu.store.book_service.exceptions.BookNotFoundException;
 import com.pungu.store.book_service.repositories.BookRepository;
+import com.pungu.store.book_service.utilities.SliceResponseUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * Service implementation for managing {@link Book} entities and producing {@link BookResponse} DTOs.
+ *
+ * <p>This class handles common book operations such as listing (slice-based pagination),
+ * creation, update, retrieval and deletion. It also consults the {@link AuthorClient} to
+ * resolve an author's display name when creating or updating books.</p>
+ *
+ * <p>Transactional and security annotations are applied to methods that modify state.</p>
+ *
+ * @since 1.0
+ */
 @RequiredArgsConstructor
 @Service
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
-
     private final AuthorClient authorClient;
 
-    private final RatingReviewClient ratingReviewClient;
+    /**
+     * Returns a slice (page-like segment) of books according to the provided {@link Pageable}.
+     *
+     * <p>The returned {@link SliceResponse} contains the mapped {@link BookResponse} content as
+     * well as pagination metadata (hasNext, page size, etc.) produced by {@link SliceResponseUtil}.
+     * The method uses {@link BookRepository#findAllBy(Pageable)} to perform an efficient slice
+     * query (no total count).</p>
+     *
+     * @param pageable the pagination information (page index, page size, sort)
+     * @return a {@link SliceResponse} containing the page of {@link BookResponse} objects and pagination metadata
+     */
+    @Override
+    public SliceResponse<BookResponse> getAllBooks(Pageable pageable) {
+        // fetch a slice of Book entities
+        Slice<Book> bookList = bookRepository.findAllBy(pageable);
+        List<BookResponse> content = bookList.stream()
+                .map(this::entityToResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, bookList);
+    }
+
 
     /**
-     * Creates a new book entry in the system.
+     * Creates a new {@link Book} from the supplied {@link BookRequest} and persists it.
      *
-     * @param bookRequest Request DTO containing book details.
-     * @return BookResponse DTO with the created book's details.
+     * <p>If a book with the same title (case-insensitive) already exists, a {@link BookAlreadyExistsException}
+     * is thrown. This method populates the {@code authorName} by calling {@link #getAuthorName(Long)}.
+     * It is transactional and restricted to users with the ADMIN role.</p>
+     *
+     * @param bookRequest the request DTO containing the book data to create; must contain at least a title
+     * @return the created {@link BookResponse} representing the persisted entity
+     * @throws BookAlreadyExistsException if a book with the same title already exists (case-insensitive)
      */
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public BookResponse createBook(BookRequest bookRequest) {
-        Long authorId = bookRequest.getAuthorName() != null ? authorClient.getAuthorIdByName(bookRequest.getAuthorName()) : bookRequest.getAuthorId();
+        if (bookRepository.existsByTitleIgnoreCase(bookRequest.getTitle())) {
+            throw new BookAlreadyExistsException("Book with this title already exists.");
+        }
 
         Book book = Book.builder()
                 .title(bookRequest.getTitle())
-                .authorId(authorId)
+                .authorId(bookRequest.getAuthorId())
+                .authorName(getAuthorName(bookRequest.getAuthorId()))
                 .description(bookRequest.getDescription())
                 .genre(bookRequest.getGenre())
                 .language(bookRequest.getLanguage())
                 .publicationDate(bookRequest.getPublicationDate())
-                .ebookUrl(bookRequest.getEbookUrl())
                 .coverImageUrl(bookRequest.getCoverImageUrl())
-                .availableForReading(bookRequest.getEbookUrl() != null)
-                .availableForDownload(bookRequest.getEbookUrl() != null)
                 .build();
 
-        return mapToResponse(bookRepository.save(book));
+        return entityToResponse(bookRepository.save(book));
+    }
+
+
+    /**
+     * Returns all books by the specified author, using slice-based pagination.
+     *
+     * <p>This method returns a {@link SliceResponse} built from a {@link Slice} query,
+     * which avoids an expensive total-count query and is suitable for larger result sets.
+     * For small result sets where a full list is required, callers can adapt accordingly.</p>
+     *
+     * @param authorId the id of the author whose books should be returned; must not be {@code null}
+     * @param pageable pagination and optional sorting information
+     * @return a {@link SliceResponse} of {@link BookResponse} objects for the given author
+     */
+    @Override
+    public SliceResponse<BookResponse> getAllBookByAuthorId(Long authorId, Pageable pageable) {
+        Slice<Book> bookList = bookRepository.findByAuthorId(authorId, pageable);
+        List<BookResponse> content = bookList.stream()
+                .map(this::entityToResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, bookList);
     }
 
     /**
-     * Retrieves a book by its ID.
+     * Retrieves a single book by its id.
      *
-     * @param bookId ID of the book.
-     * @return BookResponse with book details.
+     * @param bookId the id of the book to retrieve; must not be {@code null}
+     * @return the {@link BookResponse} mapped from the found entity
+     * @throws BookNotFoundException if no book exists with the given id
      */
     @Override
     public BookResponse getBookById(Long bookId) {
         Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
-        return mapToResponse(book);
+                .orElseThrow(() -> new BookNotFoundException("There is no book found for this book id " + bookId));
+        return entityToResponse(book);
     }
 
-    @Override
-    public List<BookResponse> getAllBookByAuthorId(Long authorId, Sort sort) {
-        return bookRepository.findByAuthorId(authorId, sort).stream().map(this::mapToResponse).collect(Collectors.toList());
-    }
 
     /**
-     * Returns all books in the database.
+     * Updates an existing book identified by {@code bookId} with the values from {@code bookRequest}.
      *
-     * @return List of BookResponse DTOs.
-     */
-    @Override
-    public List<BookResponse> getAllBooks(Sort sort) {
-        return bookRepository.findAll(sort)
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Updates an existing book.
+     * <p>The method first validates that the book exists; if not, a {@link BookNotFoundException} is thrown.
+     * It then updates fields and persists the changes. This operation is transactional and requires ADMIN role.</p>
      *
-     * @param bookId      ID of the book to update.
-     * @param bookRequest DTO with updated data.
-     * @return Updated BookResponse.
+     * @param bookId the id of the book to update; must not be {@code null}
+     * @param bookRequest the DTO containing updated book values
+     * @return the updated {@link BookResponse} representing the saved entity
+     * @throws BookNotFoundException if the book with the supplied id does not exist
      */
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public BookResponse updateBook(Long bookId, BookRequest bookRequest) {
-        if (!bookRepository.existsById(bookId)) {
-            throw new RuntimeException("Book not found");
-        }
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(
+                        "There is no book found for this book id " + bookId));
 
-        Long authorId = bookRequest.getAuthorName() != null ? authorClient.getAuthorIdByName(bookRequest.getAuthorName()) : bookRequest.getAuthorId();
+        book.setTitle(bookRequest.getTitle());
+        book.setAuthorId(bookRequest.getAuthorId());
+        book.setAuthorName(getAuthorName(bookRequest.getAuthorId()));
+        book.setDescription(bookRequest.getDescription());
+        book.setGenre(bookRequest.getGenre());
+        book.setLanguage(bookRequest.getLanguage());
+        book.setPublicationDate(bookRequest.getPublicationDate());
+        book.setCoverImageUrl(bookRequest.getCoverImageUrl());
 
-        Book updatedBook = Book.builder()
-                .title(bookRequest.getTitle())
-                .authorId(authorId)
-                .description(bookRequest.getDescription())
-                .genre(bookRequest.getGenre())
-                .language(bookRequest.getLanguage())
-                .publicationDate(bookRequest.getPublicationDate())
-                .ebookUrl(bookRequest.getEbookUrl())
-                .coverImageUrl(bookRequest.getCoverImageUrl())
-                .availableForReading(bookRequest.getEbookUrl() != null)
-                .availableForDownload(bookRequest.getEbookUrl() != null)
-                .build();
-
-        return mapToResponse(bookRepository.save(updatedBook));
+        Book saved = bookRepository.save(book);
+        return entityToResponse(saved);
     }
 
+
     /**
-     * Deletes a book by its ID.
+     * Deletes the book identified by {@code bookId}.
      *
-     * @param bookId ID of the book to delete.
+     * <p>If the book does not exist a {@link BookNotFoundException} will be thrown. This operation is
+     * transactional and requires ADMIN privileges.</p>
+     *
+     * @param bookId the id of the book to delete; must not be {@code null}
+     * @throws BookNotFoundException if no book exists with the given id
      */
     @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteBook(Long bookId) {
-        Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+        if (!bookRepository.existsById(bookId)) {
+            throw new BookNotFoundException("There is no book found for this book id " + bookId);
+        }
         bookRepository.deleteById(bookId);
     }
 
     /**
-     * Maps a Book entity to a BookResponse DTO.
-     * Includes ratings and average rating fetched from the rating service.
+     * Returns a slice of books whose title starts with the given prefix (case-insensitive).
      *
-     * @param book Book entity to map.
-     * @return BookResponse with all book details.
+     * @param title the title prefix to filter by; if blank or {@code null} this method will return
+     *              an empty slice depending on repository behavior
+     * @param pageable pagination information (page index, size and sort)
+     * @return a {@link SliceResponse} containing matched {@link BookResponse} objects and pagination metadata
      */
-    private BookResponse mapToResponse(Book book) {
-        List<RatingResponse> ratings = ratingReviewClient.getRatingsForBook(book.getBookId());
-        double averageRating = ratings.stream()
-                .mapToDouble(RatingResponse::getRating)
-                .average()
-                .orElse(0.0);
+    @Override
+    public SliceResponse<BookResponse> getAllBooksStartingWithTitle(String title, Pageable pageable) {
+        Slice<Book> bookSlice = bookRepository.findByTitleStartingWithIgnoreCase(title, pageable);
+        List<BookResponse> content = bookSlice.stream()
+                .map(this::entityToResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, bookSlice);
+    }
 
-        String authorName = book.getAuthorId() != null
-                ? authorClient.getAuthorNameById(book.getAuthorId())
-                : "Unknown Author";
-        long authorId = book.getAuthorId() != null ? book.getAuthorId() : -1;
-
+    /**
+     * Maps a {@link Book} entity to its {@link BookResponse} DTO.
+     *
+     * <p>Mapping currently copies primary fields. Ratings or other external data can be
+     * merged here if required by fetching from other services.</p>
+     *
+     * @param book the entity to map; must not be {@code null}
+     * @return the populated {@link BookResponse} DTO
+     */
+    private BookResponse entityToResponse(Book book) {
         return BookResponse.builder()
                 .bookId(book.getBookId())
                 .title(book.getTitle())
-                .authorName(authorName)
-                .authorId(authorId)
+                .authorId(book.getAuthorId())
+                .authorName(book.getAuthorName())
                 .description(book.getDescription())
                 .genre(book.getGenre())
-                .coverImageUrl(book.getCoverImageUrl())
-                .publicationDate(book.getPublicationDate())
-                .averageRating(averageRating)
-                .reviews(ratings)
-                .availableForReading(book.isAvailableForReading())
-                .availableForDownload(book.isAvailableForDownload())
                 .language(book.getLanguage())
+                .publicationDate(book.getPublicationDate())
+                .coverImageUrl(book.getCoverImageUrl())
                 .build();
+    }
+
+    /**
+     * Helper that resolves an author's display name using {@link AuthorClient}.
+     *
+     * <p>If {@code authorId} is {@code null} this method returns the constant {@code "Unknown Author"}.
+     * Otherwise, it will call the author client and return whatever value is returned by the client
+     * (callers should handle potential downstream errors).</p>
+     *
+     * @param authorId id of the author to resolve, may be {@code null}
+     * @return the resolved author name or {@code "Unknown Author"} when {@code authorId} is {@code null}
+     */
+    private String getAuthorName(Long authorId) {
+        String authorName = "Unknown Author";
+
+        if (authorId != null) {
+            authorName = authorClient.getAuthorNameById(authorId);
+        }
+        return authorName;
     }
 
 }

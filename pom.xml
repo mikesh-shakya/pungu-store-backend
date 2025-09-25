@@ -20,7 +20,6 @@
         <module>book-service</module>
         <module>rating-service</module>
         <module>service-registry</module>
-        <module>file-storage-service</module>
     </modules>
 
     <properties>

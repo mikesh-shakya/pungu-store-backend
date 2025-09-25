@@ -1,51 +1,66 @@
 package com.pungu.store.rating_service.services;
 
-import com.pungu.store.rating_service.entities.Rating;
-
-import java.util.List;
+import com.pungu.store.rating_service.dtos.RatingRequest;
+import com.pungu.store.rating_service.dtos.RatingResponse;
+import com.pungu.store.rating_service.dtos.SliceResponse;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface for managing book ratings and reviews.
+ *
+ * <p>Provides operations to create or update ratings, query ratings by book or user,
+ * retrieve individual ratings, and calculate average ratings for books.</p>
  */
 public interface RatingService {
 
     /**
-     * Adds a new rating and review for a book by a user.
+     * Adds a new rating and review for a book by a user, or updates the existing one
+     * if the user has already rated the book.
      *
-     * @param rating the rating entity to be added
-     * @return the saved rating entity
+     * @param rating a {@link RatingRequest} containing book ID, user ID, rating value,
+     *               and optional review text
+     * @return a {@link RatingResponse} representing the saved or updated rating
      */
-    Rating addRating(Rating rating);
+    RatingResponse addOrUpdateRating(RatingRequest rating);
 
     /**
-     * Retrieves all ratings for a specific book.
+     * Retrieves a slice of ratings for the specified book.
      *
-     * @param bookId ID of the book
-     * @return list of ratings for the given book
+     * <p>Results are returned in a {@link SliceResponse}, which includes both
+     * a list of {@link RatingResponse} DTOs and pagination metadata.
+     * Unlike a {@code Page}, a {@code Slice} does not include the total count,
+     * making it more efficient for infinite-scroll or cursor-based UIs.</p>
+     *
+     * @param bookId   the ID of the book whose ratings should be fetched
+     * @param pageable pagination and sorting information
+     * @return a {@link SliceResponse} of ratings for the given book
      */
-    List<Rating> getRatingsByBook(Long bookId);
+    SliceResponse<RatingResponse> getRatingsByBook(Long bookId, Pageable pageable);
 
     /**
-     * Retrieves all ratings submitted by a specific user.
+     * Retrieves a slice of ratings submitted by the specified user.
      *
-     * @param userId ID of the user
-     * @return list of ratings given by the user
+     * @param userId   the ID of the user whose ratings should be fetched
+     * @param pageable pagination and sorting information
+     * @return a {@link SliceResponse} of ratings given by the user
      */
-    List<Rating> getRatingsByUser(Long userId);
+    SliceResponse<RatingResponse> getRatingsByUser(Long userId, Pageable pageable);
 
     /**
-     * Calculates the average rating of a specific book.
+     * Calculates the average rating value for a specific book.
      *
-     * @param bookId ID of the book
-     * @return average rating value between 1.0 and 5.0
+     * @param bookId the ID of the book
+     * @return the average rating value (typically between 1.0 and 5.0),
+     *         or {@code 0.0} if no ratings exist
      */
     double getAverageRating(Long bookId);
+
     /**
-     * Retrieves the rating submitted by a user for a specific book, if it exists.
+     * Retrieves the rating submitted by a specific user for a specific book.
      *
-     * @param bookId ID of the book
-     * @param userId ID of the user
-     * @return rating object or null if not found
+     * @param bookId the ID of the book
+     * @param userId the ID of the user
+     * @return a {@link RatingResponse} for the rating, or {@code null} if not found
      */
-    Rating getRatingByBookAndUser(Long bookId, Long userId);
+    RatingResponse getRatingByBookAndUser(Long bookId, Long userId);
 }

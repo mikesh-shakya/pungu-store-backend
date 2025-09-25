@@ -2,16 +2,16 @@ package com.pungu.store.author_service.controller;
 
 import com.pungu.store.author_service.dto.AuthorRequest;
 import com.pungu.store.author_service.dto.AuthorResponse;
+import com.pungu.store.author_service.dto.SliceResponse;
 import com.pungu.store.author_service.service.AuthorService;
+import com.pungu.store.author_service.utilities.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * REST controller for managing authors.
@@ -24,6 +24,34 @@ public class AuthorController {
     private final AuthorService authorService;
 
     /**
+     * Retrieves all authors.
+     *
+     * @param offset the page index (0-based)
+     * @param limit the maximum number of authors to return per page
+     * @param orderBy optional sort criteria, e.g. "fullName:asc,dateOfBirth:desc" or "-name,createdDate" (dash prefix means DESC)
+     * @param prefix optional filter to match authors whose full name or pen name starts with the given value
+     *
+     * @return a list of all author responses
+     */
+    @GetMapping()
+    @ResponseStatus(HttpStatus.OK)
+    public SliceResponse<AuthorResponse> getAllAuthors(
+            @RequestParam(value = "offset", defaultValue = "0") int offset,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "orderBy", required = false) String orderBy,
+            @RequestParam(value = "name", required = false) String prefix
+    ) {
+        Pageable pageable = PageRequest.of(offset, limit, SortUtils.parseSort(orderBy));
+
+        if (prefix == null || prefix.isEmpty()) {
+            return authorService.getAllAuthors(pageable);
+        } else {
+            return authorService.getAuthorByFullNameOrPenNameStartingWith(prefix, pageable);
+        }
+    }
+
+
+    /**
      * Creates a new author.
      *
      * @param request the author details
@@ -31,7 +59,8 @@ public class AuthorController {
      */
     @PostMapping()
     public ResponseEntity<AuthorResponse> createAuthor(@Valid @RequestBody AuthorRequest request) {
-        return ResponseEntity.ok(authorService.createAuthor(request));
+        AuthorResponse response = authorService.createAuthor(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
@@ -42,33 +71,15 @@ public class AuthorController {
      */
     @GetMapping("/{authorId}")
     public ResponseEntity<AuthorResponse> getAuthorById(@PathVariable("authorId") Long authorId) {
-        return ResponseEntity.ok(authorService.getAuthorById(authorId));
+        return new ResponseEntity<>(authorService.getAuthorById(authorId), HttpStatus.OK);
     }
 
-    /**
-     * Retrieves all authors.
-     *
-     * @return a list of all author responses
-     */
-    @GetMapping()
-    public ResponseEntity<List<AuthorResponse>> getAllAuthors(@RequestParam(value = "sortBy", required = false) String sortBy) {
-        Sort sort = Sort.unsorted();
-        if (sortBy != null && !sortBy.isBlank()) {
-            List<Sort.Order> orders = Arrays.stream(sortBy.split(","))
-                    .map(String::trim)
-                    .map(field -> new Sort.Order(Sort.Direction.ASC, field))
-                    .toList();
-
-            sort = Sort.by(orders);
-        }
-        return ResponseEntity.ok(authorService.getAllAuthors(sort));
-    }
 
     /**
      * Updates an existing author by ID.
      *
      * @param authorId the ID of the author to update
-     * @param request the updated author details
+     * @param request  the updated author details
      * @return the updated author response
      */
     @PutMapping("/{authorId}")

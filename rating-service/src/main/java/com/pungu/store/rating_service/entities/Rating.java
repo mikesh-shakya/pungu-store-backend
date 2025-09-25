@@ -3,11 +3,13 @@ package com.pungu.store.rating_service.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "ratings",
@@ -38,6 +40,7 @@ public class Rating {
      * ID of the book being rated.
      * Acts as a foreign key to the Book entity.
      */
+    @NotNull
     @Column(nullable = false)
     private Long bookId;
 
@@ -47,6 +50,7 @@ public class Rating {
      */
     @Column(nullable = false)
     private Long userId;
+    private String userName;
 
     /**
      * Star rating value (from 1 to 5).
@@ -59,7 +63,7 @@ public class Rating {
     /**
      * Optional review message submitted by the user.
      */
-    @Column(columnDefinition = "TEXT", length = 2000)
+    @Column(length = 2000)
     private String review;
 
     /**
@@ -68,5 +72,13 @@ public class Rating {
      */
     @CreatedDate
     @Column(nullable = false, updatable = false)
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
+
+    /**
+     * Timestamp when the rating was updated.
+     * Automatically managed by Spring JPA auditing.
+     */
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime lastUpdatedAt;
 }

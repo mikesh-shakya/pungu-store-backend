@@ -21,16 +21,14 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long bookId;
     private String title;
-    private Long authorId; // Fetched from Author Service
+    private Long authorId;
+    private String authorName; // Fetched from Author Service
     private String genre;
     private String language;
     private LocalDate publicationDate;
     @Column(columnDefinition = "TEXT")
     private String description;
-    private String ebookUrl;
     private String coverImageUrl;
-    private boolean availableForReading;
-    private boolean availableForDownload;
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdatedAt;
 

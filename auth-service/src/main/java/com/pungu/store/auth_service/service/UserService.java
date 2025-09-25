@@ -6,8 +6,6 @@ import com.pungu.store.auth_service.dtos.UserRequestDTO;
 import com.pungu.store.auth_service.dtos.UserResponseDTO;
 import jakarta.validation.Valid;
 
-import java.util.Optional;
-
 /**
  * Service interface for managing user authentication and registration.
  */
@@ -19,7 +17,17 @@ public interface UserService {
      * @param userId the ID of the user
      * @return Optional containing the User, if found
      */
-    Optional<UserResponseDTO> getUserById(Long userId);
+    UserResponseDTO getUserById(Long userId);
+
+
+    /**
+     * Fetch a username by their user ID.
+     *
+     * @param userId the ID of the user
+     * @return Optional containing the User, if found
+     */
+    String getUserNameById(Long userId);
+
 
     /**
      * Register a new user using the registration request.

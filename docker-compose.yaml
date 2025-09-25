@@ -86,17 +86,17 @@ services:
     ports:
       - "8082:8082"
 
-  file-storage-service:
-    build: ./file-storage-service
-    container_name: file-storage-service
-    ports:
-      - "8083:8083"
-    volumes:
-      - file_uploads:/app/uploads
-    depends_on:
-      - service-registry
+  author-service:
+    build:
+      context: ./author-service
+    container_name: pungu-author-service
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - author-db
+      - service-registry
+    ports:
+      - "8083:8083"
 
   rating-service:
     build:
@@ -110,17 +110,17 @@ services:
     ports:
       - "8084:8084"
 
-  author-service:
-    build:
-      context: ./author-service
-    container_name: pungu-author-service
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - author-db
-      - service-registry
-    ports:
-      - "8087:8087"
+  #  file-storage-service:
+  #    build: ./file-storage-service
+  #    container_name: file-storage-service
+  #    ports:
+  #      - "8087:8087"
+  #    volumes:
+  #      - file_uploads:/app/uploads
+  #    depends_on:
+  #      - service-registry
+  #    environment:
+  #      - SPRING_PROFILES_ACTIVE=docker
 
   service-registry:
     build:
@@ -129,5 +129,5 @@ services:
     ports:
       - "8761:8761"
 
-volumes:
-  file_uploads:
+#volumes:
+#  file_uploads:

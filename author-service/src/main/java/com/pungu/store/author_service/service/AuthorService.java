@@ -2,18 +2,20 @@ package com.pungu.store.author_service.service;
 
 import com.pungu.store.author_service.dto.AuthorRequest;
 import com.pungu.store.author_service.dto.AuthorResponse;
+import com.pungu.store.author_service.dto.SliceResponse;
 import com.pungu.store.author_service.exception.AuthorNotFoundException;
 import com.pungu.store.author_service.exception.DuplicateAuthorException;
 import com.pungu.store.author_service.model.Author;
 import com.pungu.store.author_service.repository.AuthorRepository;
+import com.pungu.store.author_service.utilities.SliceResponseUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Service class responsible for managing author-related business logic.
@@ -25,6 +27,20 @@ public class AuthorService {
     private final AuthorRepository authorRepository;
 
     /**
+     * Retrieves all authors in the system.
+     *
+     * @return List of AuthorResponse objects representing all authors.
+     */
+    public SliceResponse<AuthorResponse> getAllAuthors(Pageable pageable) {
+        Slice<Author> authorList = authorRepository.findAllBy(pageable);
+        List<AuthorResponse> content = authorList.stream()
+                .map(this::mapToResponse)
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, authorList);
+    }
+
+
+    /**
      * Creates a new author in the system.
      *
      * @param request AuthorRequest object containing the author's details.
@@ -32,6 +48,7 @@ public class AuthorService {
      * @throws DuplicateAuthorException if an author with the same name already exists.
      */
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public AuthorResponse createAuthor(AuthorRequest request) {
         if (authorRepository.existsByFullNameIgnoreCase(request.getFullName())) {
             throw new DuplicateAuthorException("Author with this name already exists.");
@@ -40,11 +57,11 @@ public class AuthorService {
         Author author = Author.builder()
                 .fullName(request.getFullName())
                 .penName(request.getPenName())
-                .profilePictureUrl(request.getProfilePictureUrl())
                 .bio(request.getBio())
                 .nationality(request.getNationality())
                 .dateOfBirth(request.getDateOfBirth())
                 .dateOfDeath(request.getDateOfDeath())
+                .profilePictureUrl(request.getProfilePictureUrl())
                 .build();
 
         author = authorRepository.save(author);
@@ -60,32 +77,25 @@ public class AuthorService {
      */
     public AuthorResponse getAuthorById(Long authorId) {
         Author author = authorRepository.findById(authorId)
-                .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
+                .orElseThrow(() -> new AuthorNotFoundException("There is no author found for this author id " + authorId));
         return mapToResponse(author);
     }
 
-    /**
-     * Retrieves all authors in the system.
-     *
-     * @return List of AuthorResponse objects representing all authors.
-     */
-    public List<AuthorResponse> getAllAuthors(Sort sort) {
-        return authorRepository.findAll(sort).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
 
     /**
-     * Retrieves all authors sorted by full name.
+     * Retrieves a specific author by their ID.
      *
-     * @return Sorted list of AuthorResponse.
+     * @param prefix full name or pen name of the author.
+     * @return List of AuthorResponse object containing author details.
      */
-    public List<AuthorResponse> getAuthorsSortedByName() {
-        return authorRepository.findAll(Sort.by(Sort.Direction.ASC, "fullName"))
-                .stream()
+    public SliceResponse<AuthorResponse> getAuthorByFullNameOrPenNameStartingWith(String prefix, Pageable pageable) {
+        Slice<Author> authorList = authorRepository.findByFullNameStartingWithIgnoreCaseOrPenNameStartingWithIgnoreCase(prefix, prefix, pageable);
+        List<AuthorResponse> content = authorList.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
+        return SliceResponseUtil.mapToSLiceResponse(content, authorList);
     }
+
 
     /**
      * Updates an existing author's details.
@@ -96,25 +106,21 @@ public class AuthorService {
      * @throws AuthorNotFoundException if the author is not found.
      */
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public AuthorResponse updateAuthor(Long authorId, AuthorRequest request) {
         Author author = authorRepository.findById(authorId)
-                .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
+                .orElseThrow(() -> new AuthorNotFoundException("There is no author found for this author id " + authorId));
 
-        Optional<Author> existing = authorRepository.findByFullNameIgnoreCase(request.getFullName());
-        if (existing.isPresent() && !existing.get().getAuthorId().equals(authorId)) {
-            throw new DuplicateAuthorException("Author with this name already exists.");
-        }
+        author.setFullName(request.getFullName());
+        author.setPenName(request.getPenName());
+        author.setBio(request.getBio());
+        author.setNationality(request.getNationality());
+        author.setDateOfBirth(request.getDateOfBirth());
+        author.setDateOfDeath(request.getDateOfDeath());
+        author.setProfilePictureUrl(request.getProfilePictureUrl());
 
-        if (request.getFullName() != null) author.setFullName(request.getFullName());
-        if (request.getPenName() != null) author.setPenName(request.getPenName());
-        if (request.getProfilePictureUrl() != null) author.setProfilePictureUrl(request.getProfilePictureUrl());
-        if (request.getBio() != null) author.setBio(request.getBio());
-        if (request.getNationality() != null) author.setNationality(request.getNationality());
-        if (request.getDateOfBirth() != null) author.setDateOfBirth(request.getDateOfBirth());
-        if (request.getDateOfDeath() != null) author.setDateOfDeath(request.getDateOfDeath());
-
-        author = authorRepository.save(author);
-        return mapToResponse(author);
+        Author saved = authorRepository.save(author);
+        return mapToResponse(saved);
     }
 
     /**
@@ -124,9 +130,10 @@ public class AuthorService {
      * @throws AuthorNotFoundException if the author is not found.
      */
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteAuthor(Long authorId) {
         if (!authorRepository.existsById(authorId)) {
-            throw new AuthorNotFoundException("Author not found");
+            throw new AuthorNotFoundException("There is no author found for this author id " + authorId);
         }
         authorRepository.deleteById(authorId);
     }
@@ -142,24 +149,24 @@ public class AuthorService {
                 .authorId(author.getAuthorId())
                 .fullName(author.getFullName())
                 .penName(author.getPenName())
-                .profilePictureUrl(author.getProfilePictureUrl())
                 .bio(author.getBio())
                 .nationality(author.getNationality())
                 .dateOfBirth(author.getDateOfBirth())
                 .dateOfDeath(author.getDateOfDeath())
+                .profilePictureUrl(author.getProfilePictureUrl())
                 .build();
     }
 
     /**
      * Retrieves the name of an author by their ID.
      *
-     * @param id the ID of the author
+     * @param authorId the ID of the author
      * @return the name of the author
      * @throws AuthorNotFoundException if no author is found with the given ID
      */
-    public String getAuthorNameById(Long id) {
-        Author author = authorRepository.findById(id)
-                .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
+    public String getAuthorNameById(Long authorId) {
+        Author author = authorRepository.findById(authorId)
+                .orElseThrow(() -> new AuthorNotFoundException("There is no author found for this author id " + authorId));
         return author.getFullName();
     }
 
@@ -172,7 +179,7 @@ public class AuthorService {
      */
     public Long getAuthorIdByName(String authorName) {
         Author author = authorRepository.findByFullNameIgnoreCase(authorName)
-                .orElseThrow(() -> new AuthorNotFoundException("Author not found"));
+                .orElseThrow(() -> new AuthorNotFoundException("There is no author found with this name " + authorName));
         return author.getAuthorId();
     }
 }
