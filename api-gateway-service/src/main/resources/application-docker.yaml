@@ -35,10 +35,6 @@ spring:
           uri: lb://BOOK-SERVICE
           predicates:
             - Path=/api/books/**
-        - id: file-storage-service
-          uri: lb://FILE-STORAGE-SERVICE
-          predicates:
-            - Path=/api/files/**
         - id: rating-service
           uri: lb://RATING-SERVICE
           predicates:

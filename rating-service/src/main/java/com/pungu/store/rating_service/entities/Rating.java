@@ -12,7 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ratings",
+@Table(name = "reviews",
         indexes = {
                 @Index(name = "idx_book_id", columnList = "bookId"),
                 @Index(name = "idx_user_id", columnList = "userId")

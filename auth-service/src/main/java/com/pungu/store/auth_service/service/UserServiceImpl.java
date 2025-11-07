@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public UserResponseDTO registerUser(UserRequestDTO request) {
+    public UserResponseDTO registerUser(UserRegisterDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateUserException("User with this email already exists.");
         }
@@ -68,7 +68,7 @@ public class UserServiceImpl implements UserService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .profilePictureUrl(request.getProfilePictureUrl())
+                .gender(request.getGender())
                 .nationality(request.getNationality())
                 .dateOfBirth(request.getDateOfBirth())
                 .role(Role.USER)
@@ -116,28 +116,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDTO updateUser(Long userId, UserRequestDTO request) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("There is no user found for this user id " + userId);
-        }
-        User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .dateOfBirth(request.getDateOfBirth())
-                .profilePictureUrl(request.getProfilePictureUrl())
-                .nationality(request.getNationality())
-                .build();
+    public UserResponseDTO updateUser(Long userId, UserUpdateDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("There is no user found for this user id " + userId));
+
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setDateOfBirth(request.getDateOfBirth());
+            user.setNationality(request.getNationality());
+            user.setGender(request.getGender());
 
         return userMapper.convertUserToUserResponseDTO(userRepository.save(user));
-    }
-
-    @Override
-    @Transactional
-    public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("There is no user found for this user id " + userId);
-        }
-        userRepository.deleteById(userId);
     }
 
 

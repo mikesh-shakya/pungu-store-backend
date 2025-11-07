@@ -1,6 +1,7 @@
 package com.pungu.store.auth_service.dtos;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.pungu.store.auth_service.entities.Gender;
 import com.pungu.store.auth_service.entities.Role;
 import lombok.*;
 
@@ -27,7 +28,7 @@ public class UserResponseDTO {
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
-
+    private Gender gender;
     private int age; // Age is a derived field and may be calculated at the service layer.
 
     private String profilePictureUrl;

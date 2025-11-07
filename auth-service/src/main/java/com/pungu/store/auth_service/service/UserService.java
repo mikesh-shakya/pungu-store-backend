@@ -1,9 +1,6 @@
 package com.pungu.store.auth_service.service;
 
-import com.pungu.store.auth_service.dtos.AuthRequest;
-import com.pungu.store.auth_service.dtos.AuthResponse;
-import com.pungu.store.auth_service.dtos.UserRequestDTO;
-import com.pungu.store.auth_service.dtos.UserResponseDTO;
+import com.pungu.store.auth_service.dtos.*;
 import jakarta.validation.Valid;
 
 /**
@@ -35,7 +32,7 @@ public interface UserService {
      * @param request the user registration data
      * @return the registered User
      */
-    UserResponseDTO registerUser(UserRequestDTO request);
+    UserResponseDTO registerUser(UserRegisterDTO request);
 
     /**
      * Log in a user using their credentials.
@@ -54,12 +51,5 @@ public interface UserService {
      */
     UserResponseDTO updateRole(long userId, String role);
 
-    /**
-     * (Optional) Delete or deactivate a user.
-     *
-     * @param userId the ID of the user
-     */
-    void deleteUser(Long userId);
-
-    UserResponseDTO updateUser(Long userId, @Valid UserRequestDTO request);
+    UserResponseDTO updateUser(Long userId, @Valid UserUpdateDTO request);
 }
