@@ -10,7 +10,6 @@ public class RatingResponse {
     private Long ratingId;
     private Long bookId;
     private Long userId;
-    private String userName;
     private int rating;
     private String review;
     private LocalDateTime createdAt;

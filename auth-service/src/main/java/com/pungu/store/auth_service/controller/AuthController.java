@@ -30,7 +30,7 @@ public class AuthController {
      * Registers a new user and returns safe user details.
      */
     @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUser(@RequestBody @Valid UserRequestDTO request) {
+    public ResponseEntity<UserResponseDTO> registerUser(@RequestBody @Valid UserRegisterDTO request) {
         UserResponseDTO registeredUser = userService.registerUser(request);
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }

@@ -17,7 +17,7 @@ public class UserMapper {
                 .role(user.getRole())
                 .dateOfBirth(user.getDateOfBirth())
                 .age(calculateAge(user.getDateOfBirth()))
-                .profilePictureUrl(user.getProfilePictureUrl())
+                .gender(user.getGender())
                 .nationality(user.getNationality())
                 .build();
     }

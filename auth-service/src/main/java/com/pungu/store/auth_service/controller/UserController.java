@@ -1,11 +1,11 @@
 package com.pungu.store.auth_service.controller;
 
-import com.pungu.store.auth_service.dtos.UserRequestDTO;
+import com.pungu.store.auth_service.dtos.UserRegisterDTO;
 import com.pungu.store.auth_service.dtos.UserResponseDTO;
+import com.pungu.store.auth_service.dtos.UserUpdateDTO;
 import com.pungu.store.auth_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,22 +54,9 @@ public class UserController {
     @PatchMapping("/{userId}")
     public UserResponseDTO updateUser(
             @PathVariable("userId") Long userId,
-            @Valid @RequestBody UserRequestDTO request
+            @Valid @RequestBody UserUpdateDTO request
     ) {
         return userService.updateUser(userId, request);
-    }
-
-
-    /**
-     * Deletes a user by ID.
-     *
-     * @param userId the ID of the user to delete
-     * @return a success message
-     */
-    @DeleteMapping("/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@PathVariable("userId") Long userId) {
-        userService.deleteUser(userId);
     }
 
     /**

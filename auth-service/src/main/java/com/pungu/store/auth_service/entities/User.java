@@ -40,9 +40,10 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     private LocalDate dateOfBirth;
-    private String profilePictureUrl;
     private String nationality;
 
     @Column(updatable = false)

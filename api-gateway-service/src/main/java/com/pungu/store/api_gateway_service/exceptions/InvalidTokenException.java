@@ -1,4 +1,4 @@
-package com.pungu.store.api_gateway_service;
+package com.pungu.store.api_gateway_service.exceptions;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

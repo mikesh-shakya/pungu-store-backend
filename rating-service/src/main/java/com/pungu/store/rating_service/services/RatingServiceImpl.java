@@ -1,6 +1,5 @@
 package com.pungu.store.rating_service.services;
 
-import com.pungu.store.rating_service.clients.UserClient;
 import com.pungu.store.rating_service.dtos.RatingRequest;
 import com.pungu.store.rating_service.dtos.RatingResponse;
 import com.pungu.store.rating_service.dtos.SliceResponse;
@@ -22,14 +21,13 @@ import java.util.Optional;
  * update and query {@link Rating} entities.
  *
  * <p>This service delegates persistence to {@link RatingRepository} and resolves user-related
- * information (username) through {@link UserClient}.</p>
  *
  * <p>Concurrency note: {@link #addOrUpdateRating(RatingRequest)} implements a
  * create-or-update pattern and handles the case where two concurrent requests race to create
  * the same (bookId, userId) rating by catching a {@code DataIntegrityViolationException}
  * and retrying the update path.</p>
  *
- * @author YourName
+ * @author Mindful Reader
  * @since 1.0
  */
 @RequiredArgsConstructor
@@ -38,7 +36,6 @@ import java.util.Optional;
 public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
-    private final UserClient userClient;
 
     /**
      * Adds a new rating for the specified book by the specified user, or updates the existing
@@ -149,7 +146,7 @@ public class RatingServiceImpl implements RatingService {
      *
      * @param bookId the ID of the book
      * @return the average rating as a {@code double}; repository-specific fallback (e.g. {@code 0.0})
-     *         is returned when there are no ratings
+     * is returned when there are no ratings
      */
     @Override
     public double getAverageRating(Long bookId) {
@@ -159,21 +156,14 @@ public class RatingServiceImpl implements RatingService {
     /**
      * Maps a {@link Rating} entity to its {@link RatingResponse} DTO.
      *
-     * <p>This method resolves the reviewer's username by calling {@link UserClient#getUserNameById(Long)}.
-     * Note that the user client call may propagate runtime exceptions (e.g., if the user service is
-     * unavailable or returns an error), which callers should be prepared to handle.</p>
-     *
      * @param rating the {@link Rating} entity to map; must not be {@code null}
      * @return a populated {@link RatingResponse} DTO
-     * @throws RuntimeException if {@link UserClient#getUserNameById(Long)} fails (e.g. downstream error)
      */
     public RatingResponse toResponse(Rating rating) {
-        String username = userClient.getUserNameById(rating.getUserId());
         return RatingResponse.builder()
                 .ratingId(rating.getRatingId())
                 .bookId(rating.getBookId())
                 .userId(rating.getUserId())
-                .userName(username)
                 .rating(rating.getRating())
                 .review(rating.getReview())
                 .createdAt(rating.getCreatedAt())
