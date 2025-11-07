@@ -37,4 +37,8 @@ public class WebClientConfig {
         return builder.baseUrl("lb://book-service/api/books").build();
     }
 
+    @Bean
+    public WebClient authorWebClient(WebClient.Builder builder) {
+        return builder.baseUrl("lb://author-service/api/authors").build();
+    }
 }

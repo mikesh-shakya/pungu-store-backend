@@ -22,7 +22,6 @@ public class Book {
     private Long bookId;
     private String title;
     private Long authorId;
-    private String authorName; // Fetched from Author Service
     private String genre;
     private String language;
     private LocalDate publicationDate;

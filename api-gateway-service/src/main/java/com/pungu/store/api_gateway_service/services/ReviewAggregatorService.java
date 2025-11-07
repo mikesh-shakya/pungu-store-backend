@@ -29,7 +29,7 @@ public class ReviewAggregatorService {
 
     // Caches for user and book lookups (reset per request)
     private final Map<Long, Mono<String>> userCache = new ConcurrentHashMap<>();
-    private final Map<Long, Mono<String>> bookCache = new ConcurrentHashMap<>();
+    private final Map<Long, Mono<BookSummaryDTO>> bookCache = new ConcurrentHashMap<>();
 
     public ReviewAggregatorService(
             @Qualifier("ratingWebClient") WebClient ratingWebClient,
@@ -96,13 +96,12 @@ public class ReviewAggregatorService {
      */
     private Mono<ReviewWithUserAndBookDTO> enrichWithUserAndBook(ReviewDTO review) {
         Mono<String> userNameMono = fetchUserName(review.userId());
-        Mono<String> bookTitleMono = fetchBookTitle(review.bookId());
+        Mono<BookSummaryDTO> bookTitleMono = fetchBookTitle(review.bookId());
 
         return Mono.zip(userNameMono, bookTitleMono)
                 .map(tuple -> new ReviewWithUserAndBookDTO(
                         review.ratingId(),
-                        review.bookId(),
-                        tuple.getT2(),  // bookTitle
+                        tuple.getT2(),  // bookSummaryDTO
                         review.userId(),
                         tuple.getT1(),  // userName
                         review.rating(),
@@ -122,7 +121,7 @@ public class ReviewAggregatorService {
                 userWebClient.get()
                         .uri("/{userId}", id)
                         .retrieve()
-                        .bodyToMono(UserDTO.class)
+                        .bodyToMono(UserSummaryDTO.class)
                         .map(user -> (user.firstName() + " " + user.lastName()).trim())
                         .doOnNext(name -> log.debug("Fetched user {} from auth-service", id))
                         .onErrorResume(WebClientResponseException.class, ex -> {
@@ -141,24 +140,23 @@ public class ReviewAggregatorService {
     /**
      * Fetches book title from cache or book-service.
      */
-    private Mono<String> fetchBookTitle(Long bookId) {
-        if (bookId == null) return Mono.just("unknown-book");
+    private Mono<BookSummaryDTO> fetchBookTitle(Long bookId) {
+        if (bookId == null) return Mono.just(new BookSummaryDTO(null, "unknown-book"));
 
         return bookCache.computeIfAbsent(bookId, id ->
                 bookWebClient.get()
                         .uri("/{bookId}", id)
                         .retrieve()
-                        .bodyToMono(BookDTO.class)
-                        .map(BookDTO::title)
-                        .doOnNext(title -> log.debug("Fetched book {} from book-service", id))
+                        .bodyToMono(BookSummaryDTO.class)
+                        .doOnNext(book -> log.debug("Fetched book {} from book-service", id))
                         .onErrorResume(WebClientResponseException.class, ex -> {
                             log.warn("Book lookup failed for bookId={} with status {}: {}",
                                     id, ex.getStatusCode(), ex.getMessage());
-                            return Mono.just("unknown-book");
+                            return Mono.just(new BookSummaryDTO(id, "unknown-book"));
                         })
                         .onErrorResume(Exception.class, ex -> {
                             log.error("Unexpected error fetching book {}: {}", id, ex.getMessage());
-                            return Mono.just("unknown-book");
+                            return Mono.just(new BookSummaryDTO(id, "unknown-book"));
                         })
                         .cache()
         );

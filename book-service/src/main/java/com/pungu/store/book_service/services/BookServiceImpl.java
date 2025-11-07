@@ -62,7 +62,7 @@ public class BookServiceImpl implements BookService {
      * Creates a new {@link Book} from the supplied {@link BookRequest} and persists it.
      *
      * <p>If a book with the same title (case-insensitive) already exists, a {@link BookAlreadyExistsException}
-     * is thrown. This method populates the {@code authorName} by calling {@link #getAuthorName(Long)}.
+     * is thrown.>
      * It is transactional and restricted to users with the ADMIN role.</p>
      *
      * @param bookRequest the request DTO containing the book data to create; must contain at least a title
@@ -80,7 +80,6 @@ public class BookServiceImpl implements BookService {
         Book book = Book.builder()
                 .title(bookRequest.getTitle())
                 .authorId(bookRequest.getAuthorId())
-                .authorName(getAuthorName(bookRequest.getAuthorId()))
                 .description(bookRequest.getDescription())
                 .genre(bookRequest.getGenre())
                 .language(bookRequest.getLanguage())
@@ -148,7 +147,6 @@ public class BookServiceImpl implements BookService {
 
         book.setTitle(bookRequest.getTitle());
         book.setAuthorId(bookRequest.getAuthorId());
-        book.setAuthorName(getAuthorName(bookRequest.getAuthorId()));
         book.setDescription(bookRequest.getDescription());
         book.setGenre(bookRequest.getGenre());
         book.setLanguage(bookRequest.getLanguage());
@@ -210,7 +208,6 @@ public class BookServiceImpl implements BookService {
                 .bookId(book.getBookId())
                 .title(book.getTitle())
                 .authorId(book.getAuthorId())
-                .authorName(book.getAuthorName())
                 .description(book.getDescription())
                 .genre(book.getGenre())
                 .language(book.getLanguage())
